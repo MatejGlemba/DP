@@ -4,6 +4,7 @@ package io.dpm.dropmenote.db.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,6 +26,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	public UserEntity findByRecoveryToken(String receoveryToken);
 
+	@Modifying
 	@Query("DELETE FROM #{#entityName} e WHERE e.recoveryTokenCreated > DATEADD(hh, -1, GETDATE())")
 	public void deleteOldRecoveryTokens();
 

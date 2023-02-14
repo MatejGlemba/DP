@@ -99,6 +99,9 @@ public class MatrixService {
 	@Autowired
 	private QRCodeService qrcodeService;
 
+	//@Autowired
+	//private KafkaService kafkaService;
+
 	/**
 	 * save/update matrix entity
 	 * 
@@ -155,6 +158,7 @@ public class MatrixService {
 
 		MatrixRegisterResponse response = null;
 		try {
+			LOG.debug("uri {}, server {} , username {}, req {}", uri, server, username, req);
 			response = restTemplate.postForObject(uri, req, MatrixRegisterResponse.class);
 		} catch (HttpClientErrorException e) {
 			String responseBody = e.getResponseBodyAsString();

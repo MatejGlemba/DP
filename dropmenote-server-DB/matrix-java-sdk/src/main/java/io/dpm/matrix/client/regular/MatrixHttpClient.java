@@ -62,7 +62,7 @@ import okhttp3.*;
 
 public class MatrixHttpClient extends AMatrixHttpClient implements MatrixClient {
 
-    private Logger log = LoggerFactory.getLogger(MatrixHttpClient.class);
+    private Logger LOG = LoggerFactory.getLogger(MatrixHttpClient.class);
 
     public MatrixHttpClient(String domain) {
         super(domain);
@@ -218,10 +218,10 @@ public class MatrixHttpClient extends AMatrixHttpClient implements MatrixClient 
 
         String body = executeAuthenticated(new Request.Builder().get().url(path.build().url()));
         long request = System.currentTimeMillis();
-        log.info("Sync: network request took {} ms", (request - start));
+        LOG.debug("Sync: network request took {} ms", (request - start));
         SyncDataJson data = new SyncDataJson(GsonUtil.parseObj(body));
         long parsing = System.currentTimeMillis();
-        log.info("Sync: parsing took {} ms", (parsing - request));
+        LOG.debug("Sync: parsing took {} ms", (parsing - request));
         return data;
     }
 

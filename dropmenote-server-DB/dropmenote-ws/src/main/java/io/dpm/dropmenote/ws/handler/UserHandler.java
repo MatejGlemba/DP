@@ -34,7 +34,7 @@ public class UserHandler extends AbstractHandler implements SessionPermissionVal
 	private static Logger LOG = LoggerFactory.getLogger(UserHandler.class);
 
 	{
-		LOG.debug("{} initialisation.", UserHandler.class.getName());
+		LOG.info("{} initialisation.", UserHandler.class.getName());
 	}
 
 	@Autowired

@@ -59,7 +59,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/save", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public QRCodeBeanResponse save(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, @RequestBody QRCodeBeanResponse request, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("QRCodeController - save - token {}", token);
+		LOG.debug("QRCodeController - save - token {}", token);
 		return qrCodeHandler.save(token, request, httpResposne);
 	}
 
@@ -67,7 +67,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/load", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public QRCodeBeanResponse load(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, long qrCodeId, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("QRCodeController - load - token {} , qrCodeId- {}", token, qrCodeId);
+		LOG.debug("QRCodeController - load - token {} , qrCodeId- {}", token, qrCodeId);
 		return qrCodeHandler.load(token, qrCodeId, httpResposne);
 	}
 
@@ -75,7 +75,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/scan", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public QRCodeBeanScanResponse scan(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = false) String token, String qrCodeToken, HttpServletResponse httpResposne) throws EntityDoesntExistException, NotValidSessionException {
-		LOG.info("QRCodeController - scan - token {}, qrCodeToken - {}", token, qrCodeToken);
+		LOG.debug("QRCodeController - scan - token {}, qrCodeToken - {}", token, qrCodeToken);
 		return qrCodeHandler.scan(qrCodeToken, token, httpResposne);
 	}
 	
@@ -83,7 +83,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/loadName", method = RequestMethod.POST, produces = ControllerConstant.TEXT_PLAIN, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public String loadName(String qrCodeId, HttpServletResponse httpResposne) throws EntityDoesntExistException, NotValidSessionException {
-		LOG.info("QRCodeController - loadName - qrCodeId - {}", qrCodeId);
+		LOG.debug("QRCodeController - loadName - qrCodeId - {}", qrCodeId);
 		return qrCodeHandler.loadName(qrCodeId, httpResposne);
 	}
 
@@ -91,7 +91,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/loadAll", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public QRCodeListWrapperResponse loadAll(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, HttpServletResponse httpResposne) throws Exception {
-		LOG.info("QRCodeController - loadAll - token {}", token);
+		LOG.debug("QRCodeController - loadAll - token {}", token);
 		return qrCodeHandler.loadAll(token, httpResposne);
 	}
 
@@ -99,7 +99,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/loadAllForInbox", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public List<QRCodeBeanResponse> loadAllForInbox(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("QRCodeController - loadAllForInbox - token {}", token);
+		LOG.debug("QRCodeController - loadAllForInbox - token {}", token);
 		return qrCodeHandler.loadAllForInboxFilter(token, httpResposne);
 	}
 
@@ -107,7 +107,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/remove", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public void remove(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, long qrCodeId, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("QRCodeController - remove - token {}, qrCodeId {}", token, qrCodeId);
+		LOG.debug("QRCodeController - remove - token {}, qrCodeId {}", token, qrCodeId);
 		qrCodeHandler.remove(token, qrCodeId, httpResposne);
 	}
 
@@ -120,7 +120,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/addShare", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public void addShare(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, long qrCodeId, String shareUserLogin, HttpServletResponse httpResposne) throws Exception {
-		LOG.info("QRCodeController - addShare - token {}, qrCodeId {}, shareUserLogin {}", token, qrCodeId, shareUserLogin);
+		LOG.debug("QRCodeController - addShare - token {}, qrCodeId {}, shareUserLogin {}", token, qrCodeId, shareUserLogin);
 		qrCodeHandler.addShare(token, qrCodeId, shareUserLogin, httpResposne);
 
 	}
@@ -129,7 +129,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/loadShares", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public List<String> loadShares(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, long qrCodeId, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("QRCodeController - loadShares - token {}, qrCodeId {}", token, qrCodeId);
+		LOG.debug("QRCodeController - loadShares - token {}, qrCodeId {}", token, qrCodeId);
 
 		return qrCodeHandler.loadShares(token, qrCodeId, httpResposne);
 	}
@@ -138,7 +138,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/removeShare", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public void removeShare(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, long qrCodeId, String shareUserLogin, HttpServletResponse httpResposne) throws Exception {
-		LOG.info("QRCodeController - removeShare - token {}, qrCodeId {}, shareUserLogin {}", token, qrCodeId, shareUserLogin);
+		LOG.debug("QRCodeController - removeShare - token {}, qrCodeId {}, shareUserLogin {}", token, qrCodeId, shareUserLogin);
 		qrCodeHandler.removeShare(token, qrCodeId, shareUserLogin, httpResposne);
 	}
 	
@@ -151,7 +151,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/generate", method = RequestMethod.POST, produces = ControllerConstant.ALL, consumes = ControllerConstant.ALL)
 	@ResponseBody
 	public byte[] generate(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, long qrCodeId, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException, EmailException {
-		LOG.info("QRCodeController - generate - token {}, qrCodeId {}", token, qrCodeId);
+		LOG.debug("QRCodeController - generate - token {}, qrCodeId {}", token, qrCodeId);
 		return qrCodeHandler.generate(token, qrCodeId, httpResposne);
 	}
 
@@ -159,7 +159,7 @@ public class QRCodeController extends AbstractController {
 	@RequestMapping(value = "/importFromCSV", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.ALL)
 	@ResponseBody
 	public List<QRCodeListBean> importFromCSV(@RequestParam("file") MultipartFile file, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("QRCodeController - importFromCSV - file {}", file);
+		LOG.debug("QRCodeController - importFromCSV - file {}", file);
 		return qrCodeHandler.importFromCSV(file);
 	}
 }

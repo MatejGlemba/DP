@@ -76,6 +76,7 @@ public class PushNotificationService {
 	 * @throws IOException
 	 */
 	public void sendPush(String message, String qrcodeId, String roomId, String[] deviceIds) throws IOException {
+		LOG.debug("Sending push notification from webSocketChatHandler service");
 		if (qrcodeId == null || qrcodeId.equals("")) {
 			LOG.debug("Push notification not send. Missing qrcodeId param for Chat.");
 			return;
@@ -84,6 +85,7 @@ public class PushNotificationService {
 			roomId = "";
 		}
 		String msgBody = message + ";" + CHAT_PREFIX + webUrl + "/#/chat?qr=" + qrcodeId + "&roomId=" + roomId;
+		LOG.debug("Sending push notification from webSocketChatHandler service - mssg body {}", msgBody);
 		sendPush(msgBody, "3", deviceIds);
 	}
 	
@@ -105,14 +107,15 @@ public class PushNotificationService {
 //		for (String id : deviceIds) {
 //			LOG.debug("Push notification deviceId:{}", id);
 //		}
-//		LOG.debug("Push notification messageBody:{}", messageBody);
+		LOG.debug("Push notification messageBody:{}", messageBody);
 		
 		/* connect to push notification server */
 		HttpURLConnection connection = (HttpURLConnection)new URL("https://push.codenameone.com/push/push").openConnection();
 		connection.setDoOutput(true);
 		connection.setRequestMethod("POST");
 		connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-		
+
+		LOG.debug("successful creation of httpurl connetion to codename service");
 		/* set development push certificate for testing */
 		if(!itunesProductionPush) {
 		    itunesCert = itunesCertDev;
@@ -124,7 +127,7 @@ public class PushNotificationService {
 		for (String id : deviceIds) {
 			paramDeviceIds += "&device=" + URLEncoder.encode(id, "UTF-8");
 		}
-		
+		LOG.debug("paramDeviceIds {}", paramDeviceIds);
 		/* create query */
 		String query = "token="  + pushToken +
 			paramDeviceIds +
@@ -138,11 +141,15 @@ public class PushNotificationService {
 		    "&production=" + itunesProductionPush +
 		    "&sid=" + URLEncoder.encode(windowsSid, "UTF-8") +
 		    "&client_secret=" + URLEncoder.encode(windowsClientSecret, "UTF-8");
-		
+
+		LOG.debug("creation of query {}", query);
 		/* send notifications */
 		try (OutputStream output = connection.getOutputStream()) {
 		    output.write(query.getBytes("UTF-8"));
-		} 
+		} catch (IOException e) {
+			LOG.debug("throw exception while outpustream writing {}", e);
+			throw e;
+		}
 		LOG.debug("Push notification response code:{}, message:{}", connection.getResponseCode(), connection.getResponseMessage());
         return connection.getResponseMessage();
 	}

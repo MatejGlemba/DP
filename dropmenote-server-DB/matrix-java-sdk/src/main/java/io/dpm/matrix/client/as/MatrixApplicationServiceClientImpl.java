@@ -37,7 +37,7 @@ import okhttp3.Request;
 
 public class MatrixApplicationServiceClientImpl extends MatrixHttpClient implements MatrixApplicationServiceClient {
 
-    private Logger log = LoggerFactory.getLogger(MatrixApplicationServiceClientImpl.class);
+    private Logger LOG = LoggerFactory.getLogger(MatrixApplicationServiceClientImpl.class);
 
     public MatrixApplicationServiceClientImpl(String domain) {
         super(domain);
@@ -72,7 +72,7 @@ public class MatrixApplicationServiceClientImpl extends MatrixHttpClient impleme
 
     @Override
     public MatrixClient createUser(String localpart) {
-        log.debug("Creating new user {}", localpart);
+        LOG.debug("Creating new user {}", localpart);
         URL path = getClientPath("register");
         executeAuthenticated(
                 new Request.Builder().post(getJsonBody(new VirtualUserRegistrationBody(localpart))).url(path));

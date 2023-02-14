@@ -36,7 +36,7 @@ public class UserService {
 	private static Logger LOG = LoggerFactory.getLogger(UserService.class);
 
 	{
-		LOG.debug("{} initialisation.", UserService.class.getName());
+		LOG.info("{} initialisation.", UserService.class.getName());
 	}
 
 	@Value("${image.file.url}")
@@ -145,6 +145,7 @@ public class UserService {
 		UserBean bean = UserDto.convertToBean(userEntity);
 		//set img url
 		bean.setAlias(bean.getAlias() == null ? "Anonymous" : bean.getAlias());
+		LOG.info("USER service : load {}, {}",imageFileUrl, bean.getPhoto());
 		bean.setPhoto(imageFileUrl + bean.getPhoto());
 		return bean;
 	}

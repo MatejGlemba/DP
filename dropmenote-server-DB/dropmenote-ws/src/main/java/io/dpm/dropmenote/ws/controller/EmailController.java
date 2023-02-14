@@ -51,7 +51,7 @@ public class EmailController extends AbstractController {
 	@RequestMapping(value = "/sendRegistration", method = RequestMethod.POST, produces = ControllerConstant.ALL, consumes = ControllerConstant.ALL)
 	@ResponseBody
 	public void sendRegistration(String loginEmail) throws Exception {
-		LOG.info("EmailController - sendRegistration - loginEmail {}", loginEmail);
+		LOG.debug("EmailController - sendRegistration - loginEmail {}", loginEmail);
 		UserBean userBean = userService.loadByLogin(loginEmail);
     	if (userBean != null) {
     		emailService.sendRegistration(userBean);
@@ -62,7 +62,7 @@ public class EmailController extends AbstractController {
 	@RequestMapping(value = "/sendForgotpassword", method = RequestMethod.POST, produces = ControllerConstant.ALL, consumes = ControllerConstant.ALL)
 	@ResponseBody
 	public void sendForgotpassword(String loginEmail) throws Exception {
-		LOG.info("EmailController - sendForgotpassword - loginEmail {}", loginEmail);
+		LOG.debug("EmailController - sendForgotpassword - loginEmail {}", loginEmail);
 		UserBean userBean = userService.loadByLogin(loginEmail);
     	if (userBean != null) {
     		emailService.sendForgotPassword(userBean);
@@ -73,7 +73,7 @@ public class EmailController extends AbstractController {
 	@RequestMapping(value = "/sendNotification", method = RequestMethod.POST, produces = ControllerConstant.ALL, consumes = ControllerConstant.ALL)
 	@ResponseBody
 	public void sendNotification(String loginEmail, long qrcodeId, String message, List<String> emails) throws Exception {
-		LOG.info("EmailController - sendNotification - loginEmail {}, qrcodeId - {}, message - {}, emails - {}", loginEmail, qrcodeId, message, emails.toString());
+		LOG.debug("EmailController - sendNotification - loginEmail {}, qrcodeId - {}, emails - {}", loginEmail, qrcodeId, emails.toString());
 		UserBean userBean = userService.loadByLogin(loginEmail);
     	QRCodeBean qrCodeBean = qrService.load(qrcodeId);
     	if (userBean != null && qrCodeBean != null) {
@@ -85,7 +85,7 @@ public class EmailController extends AbstractController {
 	@RequestMapping(value = "/sendQrcode", method = RequestMethod.POST, produces = ControllerConstant.ALL, consumes = ControllerConstant.ALL)
 	@ResponseBody
 	public void sendQrcode(long userId, long qrId, HttpServletResponse response) throws Exception {
-		LOG.info("EmailController - sendQrcode - userId {}, qrId - {}", userId, qrId);
+		LOG.debug("EmailController - sendQrcode - userId {}, qrId - {}", userId, qrId);
 		UserBean userBean = userService.load(userId);
     	QRCodeBean qrCodebean = qrService.load(qrId);
     	if (userBean != null && qrCodebean != null) {

@@ -1,12 +1,5 @@
 app.controller("InboxController", function ($scope, $location, dpnService, dpnDialog, $window) {
-
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', {
-            'page_title': 'Inbox',
-            'page_path': $location.url()
-        });
-    });
-
+    
     $scope.matrixList;
 
     $scope.orderByParam = "qrCodeBean.id";
@@ -29,8 +22,8 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
     $scope.isServiceFinished = false;
     $scope.isFilteredQrAdmin = false;
 
-    $scope.isQrAdmin = function () {
-        $scope.matrixList.forEach(function (item) {
+    $scope.isQrAdmin = function() {
+        $scope.matrixList.forEach(function(item){
             // console.info("ccc " + JSON.stringify(item));
             if (item.qrCodeBean.id == $scope.filterParam.value) {
                 if (item.qrCodeBean.userType == "ADMIN") {
@@ -48,14 +41,15 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
 
     // format date to either hours:minutes or day.month.year
     // note: was slow when $scope.currentDate = new Date(); in function
-    $scope.formatDate = function (date) {
+    $scope.formatDate = function(date) {
         var date = new Date(date);
         if (!date) {
             date = new Date();
         }
-        if (date.getFullYear() == $scope.currentDate.getFullYear()
-            && date.getMonth() == $scope.currentDate.getMonth()
-            && date.getDay() == $scope.currentDate.getDay()) {
+        if (date.getFullYear() == $scope.currentDate.getFullYear() 
+        && date.getMonth() == $scope.currentDate.getMonth() 
+        && date.getDay() == $scope.currentDate.getDay()) 
+        {
             return $scope.dateFormat = 'hh:mm';
         } else {
             return $scope.dateFormat = 'dd.MM.yyyy';
@@ -94,7 +88,7 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
 
     function bindQrName(valueName) {
         // Controller to URL
-        $scope.$watch(function () {
+        $scope.$watch(function() { 
             return $scope.filterParam.qrcode_name;
         }, function (newVal) {
             newVal = $scope.filterParam.qrcode_name;
@@ -102,16 +96,16 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
         });
 
         // URL to controller
-        $scope.$on('$locationChangeSuccess', function (event) {
+        $scope.$on('$locationChangeSuccess', function(event) {
             $scope.filterParam.key = "qrCodeBean.id";
-            $scope.filterParam.qrcode_name = $location.search()[valueName];
+            $scope.filterParam.qrcode_name = $location.search()[valueName]; 
             // $scope.isFilterClicked = true;
         });
     }
 
     function bindQrId(valueName) {
         // Controller to URL
-        $scope.$watch(function () {
+        $scope.$watch(function() { 
             return $scope.filterParam.value;
         }, function (newVal) {
             newVal = $scope.filterParam.value;
@@ -119,9 +113,9 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
         });
 
         // URL to controller
-        $scope.$on('$locationChangeSuccess', function (event) {
+        $scope.$on('$locationChangeSuccess', function(event) {
             $scope.filterParam.key = "qrCodeBean.id";
-            $scope.filterParam.value = $location.search()[valueName];
+            $scope.filterParam.value = $location.search()[valueName]; 
             // $scope.isFilterClicked = true;
         });
     }
@@ -139,13 +133,13 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
         let copy = Array.from($scope.matrixList, (item) => {
             let obj = Object.assign({}, item)
             for (let key of Object.keys(obj)) {
-                if (key.startsWith('_') || key === '$$hashKey') {
-                    delete obj[key]
-                }
+              if (key.startsWith('_') || key === '$$hashKey') {
+                delete obj[key]
+              }
             }
             return obj
         });
-        localStorage.setItem('matrixList', JSON.stringify({ matrixList: copy }));
+        localStorage.setItem('matrixList', JSON.stringify({matrixList: copy}));
     }
 
     // callbacks
@@ -168,11 +162,11 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
     //-------------
 
     // vysunie filtrovanie menu (buttony a pole na vpisovanie)
-    $scope.click_filter = function () {
+    $scope.click_filter = function() {
         $scope.isFilterClicked = !$scope.isFilterClicked;
         if (!$scope.isFilterClicked) {
             $scope.filterParam.key = "qrCodeBean.id";
-            $scope.filterParam.value = "";
+            $scope.filterParam.value = ""; 
             $scope.filterParam.qrcode_name = "";
             $scope.filteredMatrixObjects = [];
             $scope.isQrAdmin();
@@ -180,9 +174,9 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
     }
 
     // vrati len filtrovany objekt
-    $scope.filterFunction = function (matrixObject) {
+    $scope.filterFunction = function(matrixObject) {
         // vrati objekt do zoznamu, ak obsahuje text
-        var isActive = function (obj) {
+        var isActive = function(obj) {
             // pridava do zoznamu filtrovane polozky. Ak je zoznam prazdny, zobrazi "ziadne polozky"
             if (obj != undefined && obj != null && obj != "") {
                 if (obj.toString() == $scope.filterParam.value || !$scope.filterParam.value) {
@@ -195,32 +189,32 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
                 return obj.toString() == $scope.filterParam.value || !$scope.filterParam.value;
             }
         }
-
+        
         switch ($scope.filterParam.key) {
-            case "matrixRoomId": return isActive(matrixObject.roomId);
-            case "newMsgCount": return isActive(matrixObject.newMsgCount);
-            case "qrCodeBean.id": return isActive(matrixObject.qrCodeBean.id);
-            case "qrCodeBean.type": return isActive(matrixObject.qrCodeBean.type);
-            case "qrCodeBean.ownerAlias": return isActive(matrixObject.qrCodeBean.ownerAlias);
-            case "qrCodeBean.name": return isActive(matrixObject.qrCodeBean.name);
-            case "qrCodeBean.icon": return isActive(matrixObject.qrCodeBean.icon);
+            case "matrixRoomId": return isActive(matrixObject.roomId); 
+            case "newMsgCount": return isActive(matrixObject.newMsgCount); 
+            case "qrCodeBean.id": return isActive(matrixObject.qrCodeBean.id); 
+            case "qrCodeBean.type": return isActive(matrixObject.qrCodeBean.type); 
+            case "qrCodeBean.ownerAlias": return isActive(matrixObject.qrCodeBean.ownerAlias); 
+            case "qrCodeBean.name": return isActive(matrixObject.qrCodeBean.name); 
+            case "qrCodeBean.icon": return isActive(matrixObject.qrCodeBean.icon); 
             default: return matrixObject;
         }
     }
 
     //////////// to open dialog
-    $scope.click_openInboxFilterDialog = function () {
+    $scope.click_openInboxFilterDialog = function() {
         dpnDialog.showInboxFilter();
     }
 
-    $scope.click_removeFilter = function () {
+    $scope.click_removeFilter = function() {
         $scope.filterParam.key = "qrCodeBean.id";
         $scope.filterParam.value = "";
         $scope.filterParam.qrcode_name = "";
         $scope.isQrAdmin();
     }
 
-    $scope.click_back = function () {
+    $scope.click_back = function() {
         if (!isDialogDisplayed()) {
             if ($scope.filterParam.value) {
                 window.open("#/saveqrcode?qrcode_id=" + $scope.filterParam.value, "_self");
@@ -230,5 +224,5 @@ app.controller("InboxController", function ($scope, $location, dpnService, dpnDi
         }
     }
 
-
+   
 });

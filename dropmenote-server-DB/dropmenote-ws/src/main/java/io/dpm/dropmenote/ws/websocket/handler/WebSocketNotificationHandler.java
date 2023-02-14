@@ -26,7 +26,7 @@ public class WebSocketNotificationHandler extends TextWebSocketHandler {
     private static Logger LOG = LoggerFactory.getLogger(WebSocketNotificationHandler.class);
 
     {
-        LOG.debug("WebSocketNotificationHandler initialisation.");
+        LOG.info("WebSocketNotificationHandler initialisation.");
     }
 
     @Autowired
@@ -37,7 +37,7 @@ public class WebSocketNotificationHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTextMessage(WebSocketSession session, final TextMessage message) throws Exception {
-    	
+    	LOG.info("handle text message WS {}, message {}", session, message);
     	// Prihlasenie
         try {
         	// {"type":"LOGIN", "token":"<token>"}
@@ -92,11 +92,11 @@ public class WebSocketNotificationHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        LOG.debug("CONNECTED: " + session.toString());
+        LOG.info("CONNECTED: " + session.toString());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        LOG.debug("DISCONNECTED: " + session.toString() + " " + status.toString());
+        LOG.info("DISCONNECTED: " + session.toString() + " " + status.toString());
     }
 }

@@ -42,7 +42,7 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTextMessage(WebSocketSession session, final TextMessage message) throws Exception {
-
+		LOG.debug("handle text message WS {}, message {}", session, message);
     	// Prihlasenie
         try {
         	// {"type":"LOGIN", "token":"<token>", "qr": "<QR code UUID>", "room":<roomId>}
@@ -157,7 +157,7 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-    	LOG.debug("DISCONNECTED: " + session.toString() + " " + status.toString());
+    	LOG.info("DISCONNECTED: " + session.toString() + " " + status.toString());
     	
     	// Upratat po sebe
     	ChatSessionInfo.Info sessionInfo = chatSessionInfo.get(session.getId());
@@ -165,7 +165,7 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
     		if(sessionInfo.getMatrixClient() != null) {
     			try {
     				sessionInfo.getMatrixClient().logout();
-    				LOG.debug("Client Logged out from Chat");
+    				LOG.info("Client Logged out from Chat");
     			}catch(Exception e) {
     				
     			}

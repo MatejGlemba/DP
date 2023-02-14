@@ -40,7 +40,7 @@ import java8.util.Optional;
 
 public class WellKnownAutoDiscoverySettings implements AutoDiscoverySettings {
 
-    private final Logger log = LoggerFactory.getLogger(WellKnownAutoDiscoverySettings.class);
+    private final Logger LOG = LoggerFactory.getLogger(WellKnownAutoDiscoverySettings.class);
 
     private JsonObject raw;
 
@@ -72,7 +72,7 @@ public class WellKnownAutoDiscoverySettings implements AutoDiscoverySettings {
         try {
             return Optional.of(new URL(url));
         } catch (MalformedURLException e) {
-            log.warn("Ignoring invalid Base URL entry in well-known: {} - {}", url, e.getMessage());
+            LOG.warn("Ignoring invalid Base URL entry in well-known: {} - {}", url, e.getMessage());
             return Optional.empty();
         }
     }
@@ -82,7 +82,7 @@ public class WellKnownAutoDiscoverySettings implements AutoDiscoverySettings {
 
         array.forEach(el -> {
             if (!el.isJsonPrimitive()) {
-                log.warn("Ignoring invalid Base URL entry in well-known: {} - Not a string", GsonUtil.get().toJson(el));
+                LOG.warn("Ignoring invalid Base URL entry in well-known: {} - Not a string", GsonUtil.get().toJson(el));
                 return;
             }
 
@@ -96,10 +96,10 @@ public class WellKnownAutoDiscoverySettings implements AutoDiscoverySettings {
         List<URL> urls = new ArrayList<>();
 
         GsonUtil.findObj(base, key).ifPresent(cfg -> {
-            log.info("Found data");
+            LOG.debug("Found data");
 
             GsonUtil.findArray(cfg, "base_urls").ifPresent(arr -> {
-                log.info("Found base URL(s)");
+                LOG.debug("Found base URL(s)");
                 urls.addAll(getUrls(arr));
             });
 
@@ -112,13 +112,13 @@ public class WellKnownAutoDiscoverySettings implements AutoDiscoverySettings {
     }
 
     private void process() {
-        log.info("Processing Homeserver Base URLs");
+        LOG.debug("Processing Homeserver Base URLs");
         hsBaseUrls = processUrls(raw, "m.homeserver");
-        log.info("Found {} valid URL(s)", hsBaseUrls.size());
+        LOG.debug("Found {} valid URL(s)", hsBaseUrls.size());
 
-        log.info("Processing Identity server Base URLs");
+        LOG.debug("Processing Identity server Base URLs");
         isBaseUrls = processUrls(raw, "m.identity_server");
-        log.info("Found {} valid URL(s)", isBaseUrls.size());
+        LOG.debug("Found {} valid URL(s)", isBaseUrls.size());
     }
 
     @Override

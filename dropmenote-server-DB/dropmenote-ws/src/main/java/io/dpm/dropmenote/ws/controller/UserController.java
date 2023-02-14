@@ -46,7 +46,7 @@ public class UserController extends AbstractController {
 	private static Logger LOG = LoggerFactory.getLogger(UserController.class);
 
 	{
-		LOG.debug("{} initialisation.", UserController.class.getName());
+		LOG.info("{} initialisation.", UserController.class.getName());
 	}
 
 	@Autowired

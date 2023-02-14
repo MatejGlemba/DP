@@ -61,7 +61,7 @@ import okhttp3.Request;
 
 public class MatrixHttpRoom extends AMatrixHttpClient implements MatrixRoom {
 
-    private Logger log = LoggerFactory.getLogger(MatrixHttpRoom.class);
+    private Logger LOG = LoggerFactory.getLogger(MatrixHttpRoom.class);
 
     private String roomId;
 
@@ -96,7 +96,7 @@ public class MatrixHttpRoom extends AMatrixHttpClient implements MatrixRoom {
             try {
                 return Optional.of(new MatrixHttpContent(context, new URI(url)));
             } catch (URISyntaxException e) {
-                log.debug("{} is not a valid URI for avatar, returning empty", url);
+                LOG.debug("{} is not a valid URI for avatar, returning empty", url);
                 return Optional.empty();
             }
         });
@@ -172,7 +172,7 @@ public class MatrixHttpRoom extends AMatrixHttpClient implements MatrixRoom {
         // Maybe throw exception?
         // TODO implement method to check room existence - isValid() ?
         // if (res.getStatusLine().getStatusCode() == 404) {
-        // log.warn("Room {} is not joined, ignoring call", roomId);
+        // LOG.warn("Room {} is not joined, ignoring call", roomId);
         // return;
         // }
         request.addIgnoredErrorCode(404);

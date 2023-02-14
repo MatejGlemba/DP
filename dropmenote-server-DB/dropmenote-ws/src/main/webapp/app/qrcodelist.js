@@ -1,13 +1,7 @@
-app.controller("QrcodelistController", function ($rootScope, $location, $scope, $http, $cookies, dpnService, dpnToast, dpnDialog) {
-
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', {
-            'page_title': 'QR code list',
-            'page_path': $location.url()
-        });
-    });
+app.controller("QrcodelistController", function ($rootScope, $scope, $http, $cookies, dpnService, dpnToast, dpnDialog) {
+    
     $scope.qrcodelist = null;
-
+    
     function postToCN1(msg) { //TODELETE
         if (window.cn1PostMessage) {
             // Case 1: Running inside native app in a WebView
@@ -29,15 +23,15 @@ app.controller("QrcodelistController", function ($rootScope, $location, $scope, 
         let copy = Array.from($scope.qrcodelist, (item) => {
             let obj = Object.assign({}, item)
             for (let key of Object.keys(obj)) {
-                if (key.startsWith('_') || key === '$$hashKey') {
-                    delete obj[key]
-                }
+              if (key.startsWith('_') || key === '$$hashKey') {
+                delete obj[key]
+              }
             }
             return obj
         });
-        localStorage.setItem('qrcodelist', JSON.stringify({ qrcodelist: copy }));
+        localStorage.setItem('qrcodelist', JSON.stringify({qrcodelist: copy}));
     }
-
+    
     var urlDeviceId = window.location.href.split("di=")[1];
     if (urlDeviceId) {
         deviceId = urlDeviceId;
@@ -50,7 +44,7 @@ app.controller("QrcodelistController", function ($rootScope, $location, $scope, 
     //     deviceId = $scope.deviceIdLocal;
     // }
 
-    $rootScope.$on('$locationChangeStart', function () {
+    $rootScope.$on('$locationChangeStart', function() {
         $rootScope.previousPage = location.pathname;
     });
 
@@ -75,26 +69,26 @@ app.controller("QrcodelistController", function ($rootScope, $location, $scope, 
     //-------------
 
     // click create new qrcode
-    $scope.click_new_qrcode = function () {
+    $scope.click_new_qrcode = function() {
         window.open('#/saveqrcode', "_self");
         //TODO mozno volba ci naskenovať existujuci qr kod a z neho vytvorit novy dropmenote_qrcode
     }
 
     // show toast if shared used
-    $scope.showToastShared = function (qrcode) {
+    $scope.showToastShared = function(qrcode) {
         if (qrcode.userType == "SHARED") {
             dpnToast.showToast("INFO", "Shared Item", "Shared user can't modify Item")
         }
     }
 
     // calculate href if its Shared QR
-    $scope.calculateHref = function (qrcode) {
+    $scope.calculateHref = function(qrcode) {
         if (qrcode.userType == undefined) {
             dpnDialog.showLogin();
         } else {
-            return qrcode.userType == "SHARED"
-                ? '#/inbox?qrcode_id=' + qrcode.id + '&qrcode_name=' + qrcode.name
-                : '#/saveqrcode?qrcode_id=' + qrcode.id;
+            return qrcode.userType == "SHARED" 
+            ? '#/inbox?qrcode_id=' + qrcode.id + '&qrcode_name=' + qrcode.name 
+            : '#/saveqrcode?qrcode_id=' + qrcode.id;
         }
     }
 

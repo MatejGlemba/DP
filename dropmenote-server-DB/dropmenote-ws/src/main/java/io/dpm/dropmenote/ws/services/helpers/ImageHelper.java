@@ -55,6 +55,7 @@ public class ImageHelper {
             } else {
                 fileName = IMG_PREFIX + now + JPEG;
             }
+            LOG.debug("save image {} , {}", imageString, imageFilePath + fileName);
             ImageUtil.decodeBase64ResizeAndSaveToFile(imageString, imageFilePath + fileName);
         } else {
             LOG.warn("Image not found");

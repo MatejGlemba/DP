@@ -37,7 +37,7 @@ import okhttp3.Request;
 
 public class MatrixHttpContent extends AMatrixHttpClient implements MatrixContent {
 
-    private Logger log = LoggerFactory.getLogger(MatrixHttpContent.class);
+    private Logger LOG = LoggerFactory.getLogger(MatrixHttpContent.class);
     private final Pattern filenamePattern = Pattern.compile("filename=\"?([^\";]+)");
     private URI address;
 
@@ -59,7 +59,7 @@ public class MatrixHttpContent extends AMatrixHttpClient implements MatrixConten
 
         try {
             if (!StringUtils.equalsIgnoreCase("mxc", address.getScheme())) {
-                log.debug("{} is not a supported protocol for avatars, ignoring", address.getScheme());
+                LOG.debug("{} is not a supported protocol for avatars, ignoring", address.getScheme());
             } else {
                 MatrixHttpRequest request = new MatrixHttpRequest(new Request.Builder().url(getPermaLink()));
                 result = executeContentRequest(request);

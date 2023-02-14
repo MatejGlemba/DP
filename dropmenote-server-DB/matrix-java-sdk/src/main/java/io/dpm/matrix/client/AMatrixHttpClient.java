@@ -48,7 +48,7 @@ import okhttp3.*;
 
 public abstract class AMatrixHttpClient implements MatrixClientRaw {
 
-    private Logger log = LoggerFactory.getLogger(AMatrixHttpClient.class);
+    private Logger LOG = LoggerFactory.getLogger(AMatrixHttpClient.class);
 
     public MatrixClientContext context;
 
@@ -90,7 +90,7 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
         }
 
         String hostname = context.getDomain().split(":")[0];
-        log.info("Performing .well-known auto-discovery for {}", hostname);
+        LOG.info("Performing .well-known auto-discovery for {}", hostname);
 
         URL url = new HttpUrl.Builder().scheme("https").host(hostname).addPathSegments(".well-known/matrix/client")
                 .build().url();
@@ -107,10 +107,10 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
             return Optional.empty();
         }
 
-        log.info("Found body: {}", body);
+        LOG.info("Found body: {}", body);
 
         WellKnownAutoDiscoverySettings settings = new WellKnownAutoDiscoverySettings(body);
-        log.info("Found .well-known data");
+        LOG.info("Found .well-known data");
 
         // TODO reconsider if and where we should check for an already present HS url in the context
         if (settings.getHsBaseUrls().isEmpty()) {
@@ -121,11 +121,11 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
             context.setHsBaseUrl(baseUrlCandidate);
             try {
                 if (!getHomeApiVersions().isEmpty()) {
-                    log.info("Found a valid HS at {}", getContext().getHsBaseUrl().toString());
+                    LOG.info("Found a valid HS at {}", getContext().getHsBaseUrl().toString());
                     break;
                 }
             } catch (MatrixClientRequestException e) {
-                log.warn("Error when trying to fetch {}: {}", baseUrlCandidate, e.getMessage());
+                LOG.warn("Error when trying to fetch {}: {}", baseUrlCandidate, e.getMessage());
             }
         }
 
@@ -133,11 +133,11 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
             context.setIsBaseUrl(baseUrlCandidate);
             try {
                 if (validateIsBaseUrl()) {
-                    log.info("Found a valid IS at {}", getContext().getIsBaseUrl().toString());
+                    LOG.info("Found a valid IS at {}", getContext().getIsBaseUrl().toString());
                     break;
                 }
             } catch (MatrixClientRequestException e) {
-                log.warn("Error when trying to fetch {}: {}", baseUrlCandidate, e.getMessage());
+                LOG.warn("Error when trying to fetch {}: {}", baseUrlCandidate, e.getMessage());
             }
         }
 
@@ -218,9 +218,9 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
             int responseStatus = response.code();
 
             if (responseStatus == 200) {
-                log.debug("Request successfully executed.");
+                LOG.info("Request successfully executed.");
             } else if (matrixRequest.getIgnoredErrorCodes().contains(responseStatus)) {
-                log.debug("Error code ignored: " + responseStatus);
+                LOG.info("Error code ignored: " + responseStatus);
                 return "";
             } else {
                 MatrixErrorInfo info = createErrorInfo(body, responseStatus);
@@ -241,7 +241,7 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
             MatrixHttpContentResult result;
 
             if (responseStatus == 200 || matrixRequest.getIgnoredErrorCodes().contains(responseStatus)) {
-                log.debug("Request successfully executed.");
+                LOG.info("Request successfully executed.");
                 result = new MatrixHttpContentResult(response);
             } else {
                 String body = response.body().string();
@@ -326,18 +326,18 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
         try {
             info = gson.fromJson(body, MatrixErrorInfo.class);
             if (Objects.nonNull(info)) {
-                log.debug("Request returned with an error. Status code: {}, errcode: {}, error: {}", responseStatus,
+                LOG.info("Request returned with an error. Status code: {}, errcode: {}, error: {}", responseStatus,
                         info.getErrcode(), info.getError());
             }
         } catch (JsonSyntaxException e) {
-            log.debug("Unable to parse Matrix error info. Content was:\n{}", body);
+            LOG.info("Unable to parse Matrix error info. Content was:\n{}", body);
         }
 
         return info;
     }
 
     private void log(Request.Builder req) {
-        log.debug("Doing {} {}", req, req.toString());
+        LOG.info("Doing {} {}", req, req.toString());
     }
 
     public HttpUrl.Builder getHsBaseUrl() {

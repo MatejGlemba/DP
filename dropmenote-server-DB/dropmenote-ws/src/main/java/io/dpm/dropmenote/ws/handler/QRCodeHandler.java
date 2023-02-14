@@ -45,7 +45,7 @@ public class QRCodeHandler extends AbstractHandler implements SessionPermissionV
 	private static Logger LOG = LoggerFactory.getLogger(QRCodeHandler.class);
 
 	{
-		LOG.debug("{} initialisation.", QRCodeHandler.class.getName());
+		LOG.info("{} initialisation.", QRCodeHandler.class.getName());
 	}
 
 	@Autowired

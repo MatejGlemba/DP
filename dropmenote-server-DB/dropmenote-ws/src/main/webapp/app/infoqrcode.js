@@ -1,13 +1,7 @@
-app.controller("InfoqrcodeController", function ($rootScope, $scope, $timeout, $http, $cookies, $location, dpnService, dpnToast, $mdDialog, dpnDialog) {
+app.controller("InfoqrcodeController", function ($rootScope, $scope, $timeout, $http, $cookies, dpnService, dpnToast, $mdDialog, dpnDialog) {
 
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', {
-            'page_title': 'Info QR code',
-            'page_path': $location.url()
-        });
-    });
     var coverDiv = document.getElementById('notLoggedDivCover');
-    coverDiv.style.display = "block";
+    coverDiv.style.display = "block"; 
 
     // init qrcode object
     $scope.qrcode = {
@@ -33,22 +27,22 @@ app.controller("InfoqrcodeController", function ($rootScope, $scope, $timeout, $
     //--------------
     // scan qrcode
     //--------------
-    $scope.processQrCode = function () {
+    $scope.processQrCode = function() {
         // ak je user prihlaseny 
-        if ($scope.token) {
+        if ($scope.token) { 
 
             if ($scope.qrcode && $scope.qrcode.uuid && $scope.qrcode.id == 0 && $scope.qrcode.userType == 'ADMIN') {
                 // check if it is a new qrcode (qrcode.uuid != prazdne)
                 window.open("#/saveqrcode?newqrcode_token=" + $scope.qrcode.uuid, "_self");
             } else {
                 // check if qrcode exists (qrcode.id != 0)
-                if ($scope.qrcode.userType == 'ADMIN') {
+                if ($scope.qrcode.userType == 'ADMIN') { 
                     window.open("#/saveqrcode?qrcode_id=" + $scope.qrcode.id, "_self");
                 } else {
                     // pre shared a guest zobrazi screenu
                     $scope.isScreenVisible = true;
                 }
-
+                
             }
             // pre plebs zobrazi dialog a tuto screenu
         } else {
@@ -61,23 +55,19 @@ app.controller("InfoqrcodeController", function ($rootScope, $scope, $timeout, $
 
     var qrcode_id = getUrlParam("q");
     if (qrcode_id != null && qrcode_id != "undefined") {
-        var call_qrcode_scanCallBackSuccess = function (data) {
+        var call_qrcode_scanCallBackSuccess = function(data) {
             $scope.qrcode = data;
             $scope.isChatButtonVisible = $scope.qrcode.type == 'CHAT';
 
             $scope.processQrCode();
             // dpnService.revalidateLogoutCover(); MJU: WTF preco to tu je?
-
+            
             // Hide Loading div
-            coverDiv.style.display = "none";
-
+            coverDiv.style.display = "none"; 
+            
         }
-        var call_qrcode_scanCallBackError = function (data) {
-            if (data.errorCode == 4006) {
-                dpnDialog.showCanOwnQrCode($scope);
-            } else {
-                dpnDialog.showQrNotFound($scope);
-            }
+        var call_qrcode_scanCallBackError = function(data) {
+            dpnDialog.showQrNotFound($scope);
 
             // dpnService.processErrorResponse(data);
         }
@@ -88,16 +78,11 @@ app.controller("InfoqrcodeController", function ($rootScope, $scope, $timeout, $
     // -- Click events --
     // ------------------
 
-    $scope.click_open_chat = function () {
+    $scope.click_open_chat = function() {
         if ($scope.qrcode.blocked) {
             dpnToast.showToast("ERROR", "User blocked", "You are in blacklist");
         } else {
             window.open("#/chat?qr=" + $scope.qrcode.uuid + "&roomId=" + $scope.room, "_self");
         }
-    }
-
-}).filter('trustHtml', function ($sce) {
-    return function (html) {
-        return $sce.trustAsHtml(html)
     }
 });

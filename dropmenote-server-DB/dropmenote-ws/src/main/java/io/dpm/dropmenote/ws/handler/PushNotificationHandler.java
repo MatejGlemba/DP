@@ -47,10 +47,11 @@ public class PushNotificationHandler extends AbstractHandler implements SessionP
 	public void sendPush(String token, String message, String[] deviceIds, HttpServletResponse httpResponse) throws NotValidSessionException, PermissionDeniedException, IOException {
 		// Session validation
 		SessionBean sessionBean = validateSessionAndPermission(token, null);
-
+		LOG.debug("success validation of session {}", sessionBean);
 		pushService.sendPush(message, deviceIds);
-		
+		LOG.debug("success sending of message to device");
 		// Response token
 		httpResponse.setHeader(ControllerConstant.TOKEN_HEADER, sessionService.generateNewToken(sessionBean));
+		LOG.info("success sending http response header");
 	}
 }

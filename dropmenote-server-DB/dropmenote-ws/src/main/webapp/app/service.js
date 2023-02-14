@@ -510,6 +510,32 @@ app.service("dpnService", ['$http', '$rootScope', '$cookies', 'dpnDialog', 'dpnT
         });
     };
 
+    // SEND PUSH PUSH ---------------------------
+    // this.call_push_sendPush = function (message, deviceIds, call_push_sendPushCallBackSuccess, call_push_sendPushCallBackError) {
+    //     $http({
+    //         url: configuration_baseUrl + "/ws/push/sendPush",
+    //         dataType: "json",
+    //         method: "POST",
+    //         contentType: "application/json",
+    //         data: {},
+    //         params: {
+    //             deviceIds: deviceIds,
+    //             message: message
+    //         },
+    //         headers: {
+    //             token: this.getCookieTokenObject().token
+    //         }
+    //     }).success(function (data, status, headers, config) {
+    //         console.info("call_push_sendPush:" + JSON.stringify(data));
+    //         $cookies.put("dpn_token", prepareTokenObject(headers("token")));
+    //         call_push_sendPushCallBackSuccess(data, status, headers, config);
+    //     }).error(function (data, status, headers, config) {
+    //         console.error("Nastal problém komunikácie so serverom");
+    //         call_push_sendPushCallBackError(data, status, headers, config);
+    //     });
+    // };
+    // SEND PUSH PUSH end ---------------------------
+
     // ADD SHARE QRCODE ---------------------------
     this.call_qrcode_addShare = function (qrCodeId, shareUserLogin, call_qrcode_addShareCallBackSuccess, call_qrcode_addShareCallBackError) {
         var cookiesSessionTokenObject = this.getCookieTokenObject();

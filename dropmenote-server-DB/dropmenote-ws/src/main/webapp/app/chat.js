@@ -1,13 +1,7 @@
-app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $http, $timeout, $location, $cookies, $window, dpnService, dpnDialog, dpnToast, $route) {
+app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $http, $timeout, $cookies, $window, dpnService, dpnDialog, dpnToast, $route) {
 
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', {
-            'page_title': 'Chat',
-            'page_path': $location.url()
-        });
-    });
     // to enable input after services loads
-    $scope.enableInput = function () {
+    $scope.enableInput = function() {
         document.getElementById('chatInputTextarea').removeAttribute('disabled');
     }
 
@@ -16,25 +10,25 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
     $scope.guestMsg = undefined;
     $scope.blacklistObj = undefined;
     $scope.token = dpnService.getCookieTokenObject().token;
-    $scope.nameList = ["alligator", "bear", "beaver", "butterfly", "camel", "cat", "crab", "deer", "dolphin",
-        "elephant", "frog", "giraffe", "gorilla", "horse", "jaguar", "kangaroo", "leopard", "llama", "mouse",
-        "panda", "rabbit", "snail", "spider", "turtle", "whale", "wolf"
-    ];
-
+    $scope.nameList = [ "alligator", "bear", "beaver", "butterfly", "camel", "cat", "crab", "deer", "dolphin", 
+                       "elephant", "frog", "giraffe", "gorilla", "horse", "jaguar", "kangaroo", "leopard", "llama", "mouse",
+                       "panda", "rabbit", "snail", "spider", "turtle", "whale", "wolf"
+                      ];
+    
     // Remove cover div
     var coverDiv = document.getElementById('notLoggedDivCover');
-    coverDiv.style.display = "none";
+    coverDiv.style.display = "none";    
 
     $scope.qrCodeName = "";
 
     // Load qrCodeInfo we need to know name
     var qrcode_id = getUrlParam("qr");
     if (qrcode_id && qrcode_id != "undefined") {
-        var call_qrcode_loadNameCallBackSuccess = function (data) {
+        var call_qrcode_loadNameCallBackSuccess= function(data) {
             // console.info("load name: " + JSON.stringify(data));
             $scope.qrCodeName = data;
         }
-        var call_qrcode_loadNameCallBackError = function (data) {
+        var call_qrcode_loadNameCallBackError = function(data) {
             dpnService.processErrorResponse(data);
         }
         dpnService.call_qrcode_loadName(qrcode_id, call_qrcode_loadNameCallBackSuccess, call_qrcode_loadNameCallBackError);
@@ -43,14 +37,14 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
     //------------
     // WEBSOCKET
     //------------
-    $scope.openWebSocket = function () {
+    $scope.openWebSocket = function() {
         $scope.ws = new WebSocket(configuration_wsUrl + "/chat");
         // {“type”:“LOGIN”, “token”:“user token”, “qr”:“asi id QR kodu???”, "roomId":"id z DB matrix roomy"}
 
         /**
          * on websocket opened
          */
-        $scope.ws.onopen = function () {
+        $scope.ws.onopen = function() {
             console.info("Chat established.");
             //TODO token, qrcode id z inbox screeny
             var qrParam = getUrlParam("qr");
@@ -61,37 +55,37 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
             var tokenUnique = dpnService.getCookieTokenObject().token;
             if (tokenUnique == undefined || tokenUnique == null || tokenUnique == "") {
                 tokenUnique = fingerprint_uuid;
-                $scope.ws.send(JSON.stringify({ "type": "LOGIN", "fingerprint": tokenUnique, "qr": qrParam }));
+                $scope.ws.send(JSON.stringify({"type":"LOGIN", "fingerprint": tokenUnique, "qr":qrParam }));
             } else {
-                $scope.ws.send(JSON.stringify({ "type": "LOGIN", "token": tokenUnique, "qr": qrParam, "roomId": roomId }));
+                $scope.ws.send(JSON.stringify({"type":"LOGIN", "token": tokenUnique, "qr":qrParam, "roomId": roomId}));
             }
-            console.info("chat token: " + tokenUnique + " \n qr: " + qrParam + " \n roomId: " + roomId);
+            console.info("chat token: "+ tokenUnique + " \n qr: " + qrParam + " \n roomId: " + roomId);
             $scope.enableInput();
         };
 
         /**
          * on received message
          */
-        $scope.ws.onmessage = function (evt) {
+        $scope.ws.onmessage = function (evt) { 
             // timeout '0' to digest data, otherwise ng-repeat won't update msgList; stackoverflow "ng-repeat-not-updated-on-array-change-in-angular"
-            $timeout(function () {
+            $timeout(function() {
                 var received_msg = JSON.parse(evt.data);
                 if (received_msg) {
                     $scope.msgList.push(received_msg);
                     $scope.qrName = received_msg.qrName;
-
+                    
                     // this block enables blacklist button
                     if (received_msg.userType == "GUEST") {
                         if (received_msg.position == "RIGHT") {
                             $scope.blacklistObj = {
-                                'uuid': received_msg.from,
-                                'alias': received_msg.alias,
+                                'uuid': received_msg.from, 
+                                'alias': received_msg.alias, 
                                 'note': ""
                             };
                         }
                         $scope.guestMsg = received_msg;
                     }
-
+                    
                     // to scroll to last message without closing virtual keyboard on device
                     // 
                     // scrollableDiv.scrollIntoView(false);
@@ -100,14 +94,14 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
                     if (received_msg.type == "ERROR") {
                         dpnToast.showToast("ERROR", "Communication error", "Problem with connection to server");
                     }
-                }
+                } 
             });
         };
 
         /**
          * on websocket closed
          */
-        $scope.ws.onclose = function () {
+        $scope.ws.onclose = function() { 
             console.info("Chat connection is closed.");
         };
     }
@@ -122,7 +116,7 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
     // ------------
 
     // send msg as json
-    $scope.sendMsg = function (myMessage) {
+    $scope.sendMsg = function(myMessage) {
 
         var tokenUnique = dpnService.getCookieTokenObject().token;
         tokenUnique = tokenUnique ? tokenUnique : fingerprint_uuid;
@@ -132,11 +126,11 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
         $scope.myMessage = "";
     }
 
-    $scope.$on('$routeChangeStart', function ($event, next, current) {
+    $scope.$on('$routeChangeStart', function($event, next, current) { 
         $scope.ws.close();
     });
 
-    $scope.click_back = function () {
+    $scope.click_back = function() {
         if (!isDialogDisplayed()) {
             if (!$scope.token) {
                 var qrParam = getUrlParam("qr");
@@ -150,34 +144,30 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
             }
         }
     }
-
-    $scope.click_openQRCodeInfo = function () {
-        var param_q = getUrlParam('qr');
-        if (param_q && param_q != 'null' && param_q != 'undefined') {
-            window.open("#/infoqrcode?q=" + param_q, "_self");
-        }
+    
+    $scope.click_openQRCodeInfo = function() {
         // TODO spravnu url tu na spravnu url
         // TODO spravnu url tu na spravnu url
         // TODO spravnu url tu na spravnu url
-
+        
     }
 
-    $scope.init = function () {
+    $scope.init = function(){
         //DO NOTHING - to je len preto aby sa dal volat spolocny dialog pre editBlacklist
     }
 
-    $scope.click_addToBlacklist = function () {
+    $scope.click_addToBlacklist = function() {
         // filter all msgs to get GUEST type user - one that started the Chat
         $scope.msgList.some(msg => {
             if (msg.userType == "GUEST") {
                 if (msg.position == "RIGHT") {
                     $scope.blacklistObj = {
-                        'uuid': msg.from,
-                        'alias': msg.alias,
+                        'uuid': msg.from, 
+                        'alias': msg.alias, 
                         'note': ""
                     };
                 }
-
+                
                 $scope.guestMsg = msg;
                 return;
             }
@@ -197,7 +187,7 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
     /**
      * get image href based on anonymous user alias
      */
-    $scope.get_image_href = function (msg) {
+    $scope.get_image_href = function(msg) {
         if (msg.image) { // server vracia null ak je usertype GUEST a nema uuid (je 'plebs'). Inak vracia Icon enum
             if (msg.image.startsWith('P')) {
                 return $scope.getImgNameForChatIcon(msg.image);
@@ -206,7 +196,7 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
             }
         } else {
             if (msg.alias != undefined) {
-                var nameSubstring = msg.alias.substring(0, msg.alias.length - 3); // remove last 3 random number digits
+                var nameSubstring =  msg.alias.substring(0, msg.alias.length - 3); // remove last 3 random number digits
                 if ($scope.nameList.includes(nameSubstring)) {
                     return "app/assets/img/animal_icons/" + nameSubstring + ".png";
                 } else {
@@ -218,7 +208,7 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
                 return "";
             }
         }
-    }
+    }   
 
     // $scope.getImgNameForChatIcon = function(chatIcon) {
     //     var imgPathUser = "app/assets/img/profile_icons/";
@@ -229,14 +219,14 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
     //     return imgPathUser + chatIcon + ".svg";
     // } 
 
-    $scope.getImgNameForChatIcon = function (chatIcon) {
+    $scope.getImgNameForChatIcon = function(chatIcon) {
         if (/P\d+/.test(chatIcon)) {
             var imgPathUser = "app/assets/img/profile_icons/";
             return imgPathUser + chatIcon + ".svg";
         } else {
             var imgPathUser = "app/assets/img/save_qrcode/";
             var imgName = "qrchat_ball.svg";
-            switch (chatIcon) {
+            switch(chatIcon) {
                 case 'SPORT': imgName = "qrchat_ball.svg"; break;
                 case 'FASHION': imgName = "qrchat_figurine.svg"; break;
                 case 'MEDICINE': imgName = "qrchat_heart.svg"; break;
@@ -248,6 +238,6 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
                 default: imgName = "qrchat_ball.svg"; break;
             }
             return imgPathUser + imgName;
-        }
+        }    
     }
 });

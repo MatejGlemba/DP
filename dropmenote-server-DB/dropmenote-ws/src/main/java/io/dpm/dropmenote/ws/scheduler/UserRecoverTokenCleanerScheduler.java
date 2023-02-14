@@ -21,7 +21,7 @@ public class UserRecoverTokenCleanerScheduler {
 	private static Logger LOG = LoggerFactory.getLogger(UserRecoverTokenCleanerScheduler.class);
 
 	{
-		LOG.debug("{} initialisation.", UserRecoverTokenCleanerScheduler.class.getName());
+		LOG.info("{} initialisation.", UserRecoverTokenCleanerScheduler.class.getName());
 	}
 
 	@Autowired
@@ -32,7 +32,7 @@ public class UserRecoverTokenCleanerScheduler {
 	 */
 	@Scheduled(cron = "0 0 0/2 * * ?")
 	public void removeOldGpsData() {
-		 LOG.debug("Clen User revocerToken.");
+		 LOG.info("Clen User revocerToken.");
 		 userRepository.deleteOldRecoveryTokens();
 	}
 }

@@ -37,7 +37,7 @@ public class MatrixController extends AbstractController {
 	private static Logger LOG = LoggerFactory.getLogger(MatrixController.class);
 
 	{
-		LOG.debug("{} initialisation.", MatrixController.class.getName());
+		LOG.info("{} initialisation.", MatrixController.class.getName());
 	}
 
 	@Autowired

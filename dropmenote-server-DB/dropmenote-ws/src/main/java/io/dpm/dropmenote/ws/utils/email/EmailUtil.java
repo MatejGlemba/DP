@@ -70,6 +70,7 @@ public class EmailUtil {
 		props.put("mail.smtp.socketFactory.class", MAIL_CONFIGURATION_MAIL_SMTP_SOCKETFACTORY_CLASS);
 		props.put("mail.smtp.auth", MAIL_CONFIGURATION_MAIL_SMTP_AUTH);
 		props.put("mail.smtp.port", MAIL_CONFIGURATION_MAIL_SMTP_PORT);
+		props.put("mail.smtp.ssl.enable", MAIL_CONFIGURATION_MAIL_SMTP_AUTH);
 
 		// TODO trochu na picu , lebo stale sa robi connection na server je to
 		// pomale a moze to padat
@@ -134,6 +135,7 @@ public class EmailUtil {
 
 			// Send the complete message parts
 			message.setContent(multipart);
+			LOG.debug("Sending email : {}, {}, {}, {}", message.getFrom(), message.getAllRecipients(), message.getSubject(), message.getSession().getTransport().getURLName());
 			Transport.send(message);
 
 			LOG.debug("Email sending Done");

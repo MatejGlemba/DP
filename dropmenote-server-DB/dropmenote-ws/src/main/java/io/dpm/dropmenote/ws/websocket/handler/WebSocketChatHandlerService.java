@@ -208,6 +208,7 @@ public class WebSocketChatHandlerService {
 						String qrCodeUuid = matrixService.getQrCodeUuidByMatrixRoomId(sessionInfo.getMatrixRoomId());
 						pushNotificationService.sendPush(request.getMessage(), qrCodeUuid, matrixId, deviceIdsArray);
 					} catch (IOException e) {
+						LOG.debug("Exception while pushing notification {}", e);
 						e.printStackTrace(); 
 					} 
 				}

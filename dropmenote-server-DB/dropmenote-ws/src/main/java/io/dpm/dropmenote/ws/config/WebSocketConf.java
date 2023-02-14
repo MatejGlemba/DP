@@ -43,7 +43,7 @@ public class WebSocketConf implements WebSocketConfigurer {
     	 */
         WebSocketHandlerRegistration chatHandler = registry.addHandler(webSocketChatHandler, "/websocket/chat");
         chatHandler.setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()));
-        
+        LOG.debug("chatHandler {}", chatHandler);
         /**
          * Notification Websocket url je: ws://localhost:8080/dropmenote-ws/websocket/notification
          */

@@ -100,11 +100,15 @@ public class QRCodeService {
 		//len spravit replace alebo inak zeefektivnit
 		if (IMAGE_TYPES.stream().anyMatch(qrCodeBean.getPhoto()::contains)) {
 			String fileName = ImageHelper.saveImage(qrCodeBean.getPhoto(), "qr_code", imageFilePath, "lastfilename");
+			LOG.debug("get photo obsahuje IMAGE_TYPES : file name {}", fileName);
 			qrCodeBean.setPhoto(fileName);
 		} else {
 			if (qrCodeBean.getPhoto().contains("http")) {
-				qrCodeBean.setPhoto(qrCodeBean.getPhoto().replaceAll(imageFileUrl, ""));
+				var s = qrCodeBean.getPhoto().replaceAll(imageFileUrl, "");
+				LOG.debug("FILE obsahuje HTTP , file name {}", s);
+				qrCodeBean.setPhoto(s);
 			} else {
+				LOG.debug("FILE NEOBSAHUJE HTTP , file name");
 				qrCodeBean.setPhoto(""); //set default pic because photo is NOT NULL in DB
 			}
 		}
@@ -142,6 +146,7 @@ public class QRCodeService {
 		QRCodeBean bean = QRCodeDto.convertToBean(qrCodeRepository.findOne(qrCodeId));
 		// set img as url
 		if (bean.getPhoto() != null && !bean.getPhoto().isBlank()) {
+			LOG.debug("load file long qrcode, file name {}, {}",imageFileUrl, bean.getPhoto());
 			bean.setPhoto(imageFileUrl + bean.getPhoto());
 		}
 		return bean;
@@ -168,6 +173,7 @@ public class QRCodeService {
 		}
 		
 		if (bean.getPhoto() != null && !bean.getPhoto().isBlank()) {
+			LOG.debug("load file string qrcode, file name {}, {}",imageFileUrl, bean.getPhoto());
 			bean.setPhoto(imageFileUrl + bean.getPhoto());
 		}
 		return bean;
@@ -213,6 +219,7 @@ public class QRCodeService {
 		List<QRCodeBean> beanList = QRCodeDto.convertToBean(sharedUserRepository.findQrCodesBySharedUserId(userId));
 		beanList.stream().forEach(qrcode -> {
 			if (qrcode.getPhoto() != null && !qrcode.getPhoto().isBlank()) {
+				LOG.debug("load by shared user id, file name {}, {}",imageFileUrl, qrcode.getPhoto());
 				qrcode.setPhoto(imageFileUrl + qrcode.getPhoto());
 			}
 		});
@@ -228,6 +235,7 @@ public class QRCodeService {
 		List<QRCodeBean> beanList = QRCodeDto.convertToBean(qrCodeRepository.findByOwnerId(userId));
 		beanList.stream().forEach(qrcode -> {
 			if (qrcode.getPhoto() != null && !qrcode.getPhoto().isBlank()) {
+				LOG.debug("load all by user id {}, {}",imageFileUrl, qrcode.getPhoto());
 				qrcode.setPhoto(imageFileUrl + qrcode.getPhoto());
 			}});
 		return beanList;
@@ -344,6 +352,7 @@ public class QRCodeService {
 		// Set image url
 		qrBeanList.stream().forEach(qrcode -> {
 			if (qrcode.getPhoto() != null && !qrcode.getPhoto().isBlank()) {
+				LOG.debug("load all by list of uuid {}, {}",imageFileUrl, qrcode.getPhoto());
 				qrcode.setPhoto(imageFileUrl + qrcode.getPhoto());
 			}
 		});
@@ -361,6 +370,7 @@ public class QRCodeService {
 		// Set image url
 		sharedList.stream().forEach(shared -> {
 			if (shared.getQrCode().getPhoto() != null && !shared.getQrCode().getPhoto().isBlank()) {
+				LOG.debug("load all by shared user id {}, {}",imageFileUrl, shared.getQrCode().getPhoto());
 				shared.getQrCode().setPhoto(imageFileUrl + shared.getQrCode().getPhoto());
 			}
 		});
@@ -381,6 +391,7 @@ public class QRCodeService {
 		// Set image url
 		qrList.stream().forEach(qr -> {
 			if (qr.getPhoto() != null && !qr.getPhoto().isBlank()) {
+				LOG.debug("load all for inbox filter {}, {}",imageFileUrl, qr.getPhoto());
 				qr.setPhoto(imageFileUrl + qr.getPhoto());
 			}
 		});

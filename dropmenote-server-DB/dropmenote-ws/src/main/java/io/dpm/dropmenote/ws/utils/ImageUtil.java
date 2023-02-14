@@ -1,5 +1,9 @@
 package io.dpm.dropmenote.ws.utils;
 
+import io.dpm.dropmenote.ws.services.helpers.ImageHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -9,6 +13,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 
 import javax.imageio.IIOImage;
@@ -23,7 +29,7 @@ import javax.imageio.ImageWriter;
  *
  */
 public class ImageUtil {
-
+	private static Logger LOG = LoggerFactory.getLogger(ImageUtil.class);
 	private static int MAX_WIDTH_DEFAULT = 800;
 	private static String IMAGE_FILE_TYPE = "JPEG";
 
@@ -114,6 +120,10 @@ public class ImageUtil {
 				image = resize(image);
 			}
 			if (image != null) {
+				LOG.info("SAVE IMAGE: image {}, outputFile {}", image, outputFile.getAbsolutePath());
+				Path currentRelativePath = Paths.get("");
+				String s = currentRelativePath.toAbsolutePath().toString();
+				LOG.info("current path: {}", s);
 				saveAsJpeg(image, outputFile, 0.6f);
 
 			}

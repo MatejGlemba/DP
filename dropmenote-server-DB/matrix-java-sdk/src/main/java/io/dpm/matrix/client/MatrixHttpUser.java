@@ -42,7 +42,7 @@ import okhttp3.Request;
 
 public class MatrixHttpUser extends AMatrixHttpClient implements MatrixUser {
 
-    private Logger log = LoggerFactory.getLogger(MatrixHttpUser.class);
+    private Logger LOG = LoggerFactory.getLogger(MatrixHttpUser.class);
 
     private MatrixID mxId;
 
@@ -102,7 +102,7 @@ public class MatrixHttpUser extends AMatrixHttpClient implements MatrixUser {
             try {
                 return Optional.of(new MatrixHttpContent(getContext(), new URI(uri)));
             } catch (URISyntaxException e) {
-                log.debug("{} is not a valid URI for avatar, returning empty", uri);
+                LOG.debug("{} is not a valid URI for avatar, returning empty", uri);
                 return Optional.empty();
             }
         });

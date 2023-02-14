@@ -24,7 +24,7 @@ public class MatrixHandler extends AbstractHandler implements SessionPermissionV
 	private static Logger LOG = LoggerFactory.getLogger(MatrixHandler.class);
 
 	{
-		LOG.debug("{} initialisation.", MatrixHandler.class.getName());
+		LOG.info("{} initialisation.", MatrixHandler.class.getName());
 	}
 
 	@Autowired

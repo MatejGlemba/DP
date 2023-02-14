@@ -48,7 +48,7 @@ public class BlackListController extends AbstractController{
 	@RequestMapping(value = "/loadBlacklist", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public List<BlackListResponse> loadAll(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("BlackListController - loadAll - token {}", token);
+		LOG.debug("BlackListController - loadAll - token {}", token);
 		return blackListHandler.loadAll(token, httpResposne);
 	}
 
@@ -56,7 +56,7 @@ public class BlackListController extends AbstractController{
 	@RequestMapping(value = "/addToBlacklist", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public BlackListResponse add(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, @RequestBody BlackListRequest blackListRequest, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("BlackListController - add - token {}", token);
+		LOG.debug("BlackListController - add - token {}", token);
 		return blackListHandler.save(token, blackListRequest, httpResposne);
 	}
 
@@ -64,7 +64,7 @@ public class BlackListController extends AbstractController{
 	@RequestMapping(value = "/removeFromBlacklist", method = RequestMethod.POST, produces = ControllerConstant.MIME_JSON, consumes = ControllerConstant.MIME_JSON)
 	@ResponseBody
 	public void remove(@RequestHeader(value = ControllerConstant.TOKEN_HEADER, required = true) String token, String blacklisedUDID, HttpServletResponse httpResposne) throws NotValidSessionException, PermissionDeniedException {
-		LOG.info("BlackListController - remove - token {}, blacklisedUDID - {}", token, blacklisedUDID);
+		LOG.debug("BlackListController - remove - token {}, blacklisedUDID - {}", token, blacklisedUDID);
 		blackListHandler.remove(token, blacklisedUDID, httpResposne);
 	}
 

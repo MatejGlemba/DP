@@ -35,7 +35,7 @@ public class SessionService {
 	private static Logger LOG = LoggerFactory.getLogger(SessionService.class);
 
 	{
-		LOG.debug("Sessions initialisation.");
+		LOG.info("Sessions initialisation.");
 	}
 
 	private static final int TOKEN_LENGTH = 232; // length of token string
@@ -60,7 +60,7 @@ public class SessionService {
 
 	@Scheduled(initialDelay = SESSION_SCHEDULER_INITIAL_DELAY, fixedRate = SESSION_SCHEDULER_RATE)
 	private void deleteInvalidSessions() {
-		LOG.debug("Deleting invalid sessions");
+		LOG.info("Deleting invalid sessions");
 
 		Date currentDate = new Date();
 		int sessionsCount = sessionsMap.size();
@@ -71,12 +71,12 @@ public class SessionService {
 		while (it.hasNext()) {
 			Map.Entry<String, SessionObject> entry = it.next();
 			if (entry.getValue().getValidUntil().after(currentDate)) {
-				LOG.debug("Deleting session {}", entry.getKey());
+				LOG.info("Deleting session {}", entry.getKey());
 				it.remove();
 				removedCount.getAndIncrement();
 			}
 		}
-		LOG.debug("{}/{} sessions deleted", removedCount.get(), sessionsCount);
+		LOG.info("{}/{} sessions deleted", removedCount.get(), sessionsCount);
 	}
 
 	/**
