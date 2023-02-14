@@ -1,0 +1,82 @@
+services:
+  tomcat:
+    image: tomcat:9.0.48-jdk11-openjdk-slim
+    restart: "always"
+      #ports:
+      #- "8080:8080"
+    volumes: 
+      - ./tomcat/server.xml:/usr/local/tomcat/conf/server.xml
+        # - ./tomcat/resources:/usr/local/tomcat/resources/
+      - ./tomcat/app:/usr/local/tomcat/webapps/
+        #depends_on:
+      # - synapse_db
+    networks:
+      - dmn
+       
+  nginx:
+    image: "nginx:latest"
+    restart: "always"
+    ports:
+      - "80:80"
+      - "443:443"
+        #- "8080:8080"
+        #- "8443:8443"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./dhparam:/etc/nginx/dhparam
+      - ./certbot/conf:/etc/nginx/ssl
+      - ./certbot/data:/usr/share/nginx/html/letsencrypt  
+    depends_on:
+      - tomcat
+      - synapse
+    networks:
+      - dmn
+    
+  
+  cerbot:
+    image: certbot/certbot:latest
+    command: certonly --webroot --webroot-path=/usr/share/nginx/html/letsencrypt --email bamat31@gmail.com --agree-tos --no-eff-email -d matrix.dropmenote.com
+    command: certonly --webroot --webroot-path=/usr/share/nginx/html/letsencrypt --email bamat31@gmail.com --agree-tos --no-eff-email -d app.dropmenote.com
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/logs:/var/logs/letsencrypt
+      - ./certbot/data:/usr/share/nginx/html/letsencrypt
+      
+  synapse:
+    image: docker.io/matrixdotorg/synapse:v1.25.0
+    restart: unless-stopped
+    environment:
+      - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
+    volumes:
+      - ./synapse/data:/data
+        # - synapseData:/data
+        #ports:
+      #  - "8448:8008"
+      #depends_on:
+      #  - synapse_db
+    networks:
+      - dmn
+
+        #synapse_db:
+        #image: docker.io/postgres:14-alpine
+        #restart: unless-stopped
+        #environment:
+        #- POSTGRES_USER=synapseDB
+        #- POSTGRES_PASSWORD=m@trix!PASS31
+        #- POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+        # volumes:
+        #- synapse_db_data:/var/lib/postgresql/data
+        #- ./db/s_dpn.sql:/docker-entrypoint-initdb.d/s_dpn.sql  
+        # ports:
+        #- "5432:5432"
+        #networks:
+        #- dmn
+
+networks:
+  dmn:
+    driver: bridge
+
+volumes:
+  synapseData:
+    ##synapse_db_data:
+

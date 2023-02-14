@@ -1,0 +1,95 @@
+version: "3"
+
+services:
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.7
+    user: root
+    ports:
+      - 2181:2181
+    volumes:
+      - ./src/zookeeper:/bitnami
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - dh-kafka
+
+  kafka:
+    image: docker.io/bitnami/kafka:3
+    hostname: dh-kafka
+    user: root
+    ports:
+      - 9094:9094
+    volumes:
+      - ./src/kafka:/bitnami/kafka
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - AUTO_CREATE_TOPICS=true
+      - KAFKA_LISTENERS=INTERNAL://0.0.0.0:9092,OUTSIDE://0.0.0.0:9094
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://dh-kafka:9092,OUTSIDE://localhost:9094
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT,DEV:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    depends_on:
+      - zookeeper
+    networks:
+      - dh-kafka
+
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    ports:
+      - 27017:27017
+    volumes:
+      - ./src/mognodb:/data/db
+    networks:
+      - ai-network
+
+  influxdb:
+    container_name: influxdb
+    image: influxdb:2.5.1-alpine
+    ports:
+      - 8086:8086
+    restart: always
+    volumes:
+      - ./src/influxdb/data:/var/lib/influxdb
+      - ./src/influxdb/config.yml:/etc/influxdb2/config.yml
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=user
+      - DOCKER_INFLUXDB_INIT_PASSWORD=useruseruser
+      - DOCKER_INFLUXDB_INIT_ORG=influxdata-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=default
+      - DOCKER_INFLUXDB_INIT_RETENTION=1w
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=token
+    privileged: true
+    networks:
+      - ai-network
+
+  grafana:
+    image: grafana/grafana:latest
+    links:
+      - influxdb:influxdb
+    volumes:
+      - ./src/grafana/grafana-data:/var/lib/grafana
+      - ./src/grafana/provisioning:/etc/grafana/provisioning
+      - ./src/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./src/grafana/config.ini:/etc/grafana/config.ini
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/dashboard.json
+    ports:
+      - 3000:3000
+    depends_on:
+      - influxdb
+    restart: always
+    privileged: true
+    networks:
+      - ai-network
+
+networks:
+  dh-kafka:
+    name: dh-kafka
+  ai-network:
+    name: ai-network

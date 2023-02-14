@@ -1,6 +1,6 @@
 # dropmenote
 
-dropmenote server + db + webview
+dropmenote server + db + webview + docker
 
 
 # Requirements
@@ -43,9 +43,7 @@ dropmenote server + db + webview
 
 # deploy
 
-- unzip war file -> copy whole webview dir into unzipped war file (same level as WEB-INF) 
-- copy whole dir into apache tomcat9 webapps dir
-
+- copy war file into tomcat webapps dir
 
 # references
 

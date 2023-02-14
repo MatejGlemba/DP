@@ -26,3 +26,11 @@ hs_err_pid*
 *.idea
 *.iml
 *target/
+
+
+#docker
+docker/dropmenote/sources/synapse/data/matrix.dropmenote.com.log.config
+docker/analyzer/src/zookeeper/
+docker/analyzer/src/kafka/
+docker/analyzer/src/mognodb/
+docker/analyzer/src/influxdb/data/

@@ -1,0 +1,45 @@
+{
+  "id": 2,
+  "gridPos": {
+    "h": 9,
+    "w": 12,
+    "x": 0,
+    "y": 0
+  },
+  "type": "magnesium-wordcloud-panel",
+  "title": "Panel Title",
+  "datasource": {
+    "type": "influxdb",
+    "uid": "lp9Eg3c4k"
+  },
+  "options": {
+    "series_index": 0,
+    "wordCloudOptions": {
+      "fontFamily": "arial",
+      "fontSizes": [
+        15,
+        80
+      ],
+      "rotationAngles": [
+        0,
+        0
+      ],
+      "padding": 1,
+      "rotations": 2,
+      "transitionDuration": 800,
+      "enableTooltip": true,
+      "deterministic": true,
+      "scale": "sqrt",
+      "spiral": "archimedean"
+    }
+  },
+  "targets": [
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "lp9Eg3c4k"
+      },
+      "refId": "A"
+    }
+  ]
+}
