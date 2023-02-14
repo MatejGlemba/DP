@@ -27,9 +27,13 @@ hs_err_pid*
 *.iml
 *target/
 
+#server
+
+dropmenote-server-DB/dropmenote-ws/src/main/webapp/app/META-INF/
+dropmenote-server-DB/dropmenote-ws/src/main/resources/
 
 #docker
-docker/dropmenote/sources/synapse/data/matrix.dropmenote.com.log.config
+docker/dropmenote/sources/synapse/data/
 docker/analyzer/src/zookeeper/
 docker/analyzer/src/kafka/
 docker/analyzer/src/mognodb/
