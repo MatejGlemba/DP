@@ -38,16 +38,16 @@
     </root>
     
 	<logger name="io.dpm">
-		<level value="info" />
+		<level value="DEBUG" />
 	</logger>
 	<logger name="org.hibernate">
-		<level value="info" />
+		<level value="DEBUG" />
 	</logger>
 	<logger name="org.springframework">
-		<level value="info" />
+		<level value="DEBUG" />
 	</logger>
 	<logger name="org.springframework.ws">
-		<level value="info" />
+		<level value="DEBUG" />
 	</logger>
 
 	<!-- Dozer logovanie -->

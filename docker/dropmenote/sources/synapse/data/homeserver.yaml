@@ -208,12 +208,11 @@ listeners:
     # allow_unsafe_locale: true
 database: 
  name: "psycopg2"
-  #allow_unsafe_locale: true
  args:
    user: "s_dpn_mxt_p1"
    password: "kfiTTrkwm748nn687"
    database: "s_dpn_mxt_p1"
-   host: "postgresql.websupport.sk"
+   host: synapseDB
    cp_min: 5
    cp_max: 10
 ##############################
