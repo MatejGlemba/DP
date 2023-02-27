@@ -35,6 +35,7 @@ var app = angular.module("DropMeNoteAppUI", [
     "ngMaterial", // Toast
     "ngCookies",
     "luegg.directives",
+    "textAngular"
 ]);
 
 app.run(function ($transform) {

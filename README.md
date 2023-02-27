@@ -7,7 +7,7 @@ dropmenote server + db + webview + docker
 
 - apache tomcat9
 - java11
-- gulp node.js (for webview development)
+- gulp node.js (version 16x)
 - matrix synapse server
 - postgresql database
  

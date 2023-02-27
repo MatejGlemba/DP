@@ -89,10 +89,16 @@
                     <div class="saveqrcode-group">
                         <label class="saveqrcode-label-form">Description</label>
                         <div class="saveqrcode-group-inner">
+                            <!--<input id="saveqrcode_descriptionInput"  class="form-control input-flat" type="text" name="qrcode_description" ng-model="qrcode.description"
+                                   placeholder="Description of what your DMN code is and what information you want to share for the user after the DMN code is scanned." required
+                                   ng-change="autosave();" disabled  autocomplete="off" maxlength="23"/>
+                            <div ng-messages="saveqrcode_form.qrcode_description.$error"  ng-if="saveqrcode_form.qrcode_description.$dirty" >
+                                <div class="form-msg-error" ng-message="required"> This field is required </div>
+                            </div>-->
                             <text-angular id="saveqrcode_descriptionInput"  class="form-control edit-buttons " name="qrcode_description" rows="4" cols="50"
-                                      ng-model="qrcode.description" placeholder="Description of what your DMN code is and what information you want to share for the user after the DMN code is scanned."
-                                      style="height: auto !important" disabled  autocomplete="off" maxlength="2000"
-                                      ng-change="autosave();"></text-angular>
+                                          ng-model="qrcode.description" placeholder="Description of what your DMN code is and what information you want to share for the user after the DMN code is scanned."
+                                          style="height: auto !important" disabled  autocomplete="off" maxlength="2000"
+                                          ng-change="autosave();"></text-angular>
                         </div>
                     </div>
                     <div class="saveqrcode-group">

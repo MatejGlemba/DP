@@ -20,6 +20,7 @@
 
 package io.dpm.matrix.client;
 
+import com.google.common.util.concurrent.Futures;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -39,6 +40,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java8.util.Objects;
 import java8.util.Optional;
@@ -287,14 +291,21 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
      *         MatrixClientRequestException
      */
     public String handleRateLimited(MatrixHttpRequest matrixRequest, MatrixErrorInfo info) {
-        throw new MatrixClientRequestException(info, "Request was rate limited.");
+        ScheduledFuture<String> schedule = Executors.newSingleThreadScheduledExecutor()
+                .schedule(() -> execute(matrixRequest), 3, TimeUnit.SECONDS);
+        try {
+            return Futures.getDone(schedule);
+        } catch (ExecutionException e) {
+            throw new MatrixClientRequestException(info, "Request was rate limited.");
+        }
+        //throw new MatrixClientRequestException(info, "Request was rate limited.");
         // TODO Add default handling of rate limited call, i.e. repeated call after given time interval.
         // 1. Wait for timeout
         // 2. return execute(request)
     }
 
     public MatrixHttpContentResult handleErrorContentRequest(MatrixHttpRequest matrixRequest, int responseStatus,
-            MatrixErrorInfo info) {
+                                                             MatrixErrorInfo info) {
         String message = String.format("Request failed with status code: %s", responseStatus);
 
         if (responseStatus == 429) {
@@ -305,8 +316,16 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
     }
 
     public MatrixHttpContentResult handleRateLimitedContentRequest(MatrixHttpRequest matrixRequest,
-            MatrixErrorInfo info) {
-        throw new MatrixClientRequestRateLimitedException(info, "Request was rate limited.");
+                                                                   MatrixErrorInfo info) {
+        ScheduledFuture<MatrixHttpContentResult> schedule = Executors.newSingleThreadScheduledExecutor()
+                .schedule(() -> executeContentRequest(matrixRequest), 3, TimeUnit.SECONDS);
+        try {
+            return Futures.getDone(schedule);
+        } catch (ExecutionException e) {
+            throw new MatrixClientRequestException(info, "Request was rate limited.");
+        }
+
+        //throw new MatrixClientRequestRateLimitedException(info, "Request was rate limited.");
         // TODO Add default handling of rate limited call, i.e. repeated call after given time interval.
         // 1. Wait for timeout
         // 2. return execute(request)

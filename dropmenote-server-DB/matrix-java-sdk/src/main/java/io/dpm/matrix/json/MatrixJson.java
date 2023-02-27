@@ -58,7 +58,7 @@ public class MatrixJson {
 
     private static void encodeCanonical(JsonObject el, JsonWriterUnchecked writer) throws IOException {
         writer.beginObject();
-        el.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEachOrdered(entry -> {
+        el.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEachOrdered(entry -> {
             writer.name(entry.getKey());
             encodeCanonicalElement(entry.getValue(), writer);
         });
