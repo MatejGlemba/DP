@@ -28,7 +28,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	//	//@Query("DELETE FROM #{#entityName} e WHERE e.recoveryTokenCreated > DATEADD(hh, -1, GETDATE())")
 	@Modifying
-	@Query(value = "DELETE FROM #{#entityName} e WHERE e.recoveryTokenCreated > CURRENT_DATE - interval ' 1 hour'", nativeQuery = true)
+	@Query(value = "DELETE FROM \"user\" as e WHERE e.recovery_token_created > CURRENT_DATE - interval ' 1 hour'", nativeQuery = true)
 	public void deleteOldRecoveryTokens();
 
 	public List<UserEntity> findByUuid(String userUuid);
