@@ -2,22 +2,8 @@
 <Context antiJARLocking="true" crossContext="true" docBase="dpn-ws" path="/dpn-ws" reloadable="true">
 	<Resource auth="Container" driverClassName="org.postgresql.Driver"
 		maxActive="20" maxIdle="10" maxWait="-1" name="jdbc/postgres/loader"
-		password="9i8uijuhuygytg67" type="javax.sql.DataSource" url="jdbc:postgresql://serverDB:5432/s_dpn_p1"
-		username="s_dpn_p1" testOnBorrow="true" validationQuery="select 1;"
+		password="test" type="javax.sql.DataSource" url="jdbc:postgresql://localhost:5432/testDB"
+		username="testDB" testOnBorrow="true" validationQuery="select 1;"
 		removeAbandoned="true" />
 	<Parameter name="dataSource" override="false" value="jdbc/postgres/loader" />
 </Context>
-
-<!--  devel -->
-<!-- <?xml version="1.0" encoding="UTF-8"?> -->
-<!-- <Context antiJARLocking="true" crossContext="true" docBase="dpn-ws" path="/dpn-ws" reloadable="true"> -->
-<!-- 	<Resource auth="Container" driverClassName="org.postgresql.Driver" -->
-<!-- 		maxActive="20" maxIdle="10" maxWait="-1" name="jdbc/postgres/loader" -->
-<!-- 		password="okijuhyg7u9o" type="javax.sql.DataSource" url="jdbc:postgresql://postgresql.websupport.sk:5432/s_dpn_d1" -->
-<!-- 		username="s_dpn_d1" testOnBorrow="true" validationQuery="select 1;" -->
-<!-- 		removeAbandoned="true" /> -->
-<!-- 	<Parameter name="dataSource" override="false" value="jdbc/postgres/loader" /> -->
-<!-- </Context> -->
-
-
-

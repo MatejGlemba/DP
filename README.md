@@ -19,7 +19,10 @@ dropmenote server + db + webview + docker
 	- web.app.url=http://localhost:8080
 	- web.app.urlparam.scan=/?q=
 	- image.file.url=http://localhost:8080/resources/dropmenote/files/images/
+- edit webview domain in welcome.html - (baseUrl,  tutorialUrl)
+- edit server url and port in app/App.js (configuration_baseUrl,  configuration_wsUrl)
 - mvn clean install (skip tests)
+- copy war file into tomcat webapps dir
 - in InteliJJ create tomcat application (Edit Configurations -> add Tomcat server) 
 - load war file (located in dropmenote-ws module / target dir) 
 
@@ -27,6 +30,8 @@ dropmenote server + db + webview + docker
 
 - database configuration dropmenote-ws module resources/wepapp/META-INF/context.xml
 - edit matrix server url in dropmenote.ws.constants.ConfigurationConstant
+- edit webview domain in welcome.html - (baseUrl,  tutorialUrl)
+- edit server url and port in app/App.js (configuration_baseUrl,  configuration_wsUrl)
 - edit config.properties (dropmenote-ws module / src/main/resources) 
 	- web.app.url=http://{IP:PORT}
 	- web.app.urlparam.scan=/?q=
@@ -36,14 +41,9 @@ dropmenote server + db + webview + docker
 
 # build webview 
 
-- edit webview domain in welcome.html - (baseUrl,  tutorialUrl)
-- edit server url and port in app/App.js (configuration_baseUrl,  configuration_wsUrl)
 - gulp build-js
 - for using just min-js file , comment all scripts from CSS to Main script in index.html
 
-# deploy
-
-- copy war file into tomcat webapps dir
 
 # references
 

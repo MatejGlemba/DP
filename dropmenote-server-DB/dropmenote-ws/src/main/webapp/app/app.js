@@ -6,8 +6,8 @@
 var webappVersion = "?v=13";
 
 // Localhost
-// var configuration_baseUrl = "http://localhost/starbug-dropmenote-ws";
-// var configuration_wsUrl = "ws://localhost/starbug-dropmenote-ws/websocket";
+var configuration_baseUrl = "http://localhost:8080/dropmenote-ws";
+var configuration_wsUrl = "ws://localhost:8080/dropmenote-ws/websocket";
 
 // PetoD
 // var configuration_baseUrl = "http://192.168.88.205:8080/starbug-dropmenote-ws";
@@ -16,8 +16,8 @@ var webappVersion = "?v=13";
 //var configuration_baseUrl = "https://app.dropmenote.com/starbug-dropmenote-ws-1.0-SNAPSHOT";
 //var configuration_wsUrl = "wss://app.dropmenote.com/starbug-dropmenote-ws-1.0-SNAPSHOT/websocket";
 
-var configuration_baseUrl = "https://app.dropmenote.com/dropmenote-ws";
-var configuration_wsUrl = "wss://app.dropmenote.com/dropmenote-ws/websocket";
+//var configuration_baseUrl = "https://app.dropmenote.com/dropmenote-ws";
+//var configuration_wsUrl = "wss://app.dropmenote.com/dropmenote-ws/websocket";
 
 var userSessionToken = "token";
 var deviceId = "";

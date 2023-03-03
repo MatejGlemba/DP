@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 public class AESUtil {
 
 	// Devel
-	private static final String AES_PASSWORD = "blabla";
+	private static final String AES_PASSWORD = "8u7y6IJUHyuh7378";
 	// Prod nieje sucastou GITU !!!!
 	
 	private static SecretKeySpec secretKey;
