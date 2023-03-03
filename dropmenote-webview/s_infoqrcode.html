@@ -38,7 +38,8 @@
             <div class="saveqrcode-group" ng-if="qrcode.link">
                 <label class="saveqrcode-label-form">Website</label>
                 <div class="qrcodeinfo-description">
-                    <a target="_blank" href="{{qrcode.link}}">{{qrcode.link}}</a>
+                    <a ng-if="(token && token != 'undefined' && token != 'null')" ng-click="openWebUrl(qrcode.link);">{{qrcode.link}}</a>
+                    <a ng-if="!(token && token != 'undefined' && token != 'null')" target="_blank" href="{{qrcode.link}}">{{qrcode.link}}</a>
                     <!-- {{qrcode.link ? qrcode.link : "DMN Code website"}} -->
                     <!-- <a src="qrcode.link" href="#">qrcode.link</a>  -->
                 </div>

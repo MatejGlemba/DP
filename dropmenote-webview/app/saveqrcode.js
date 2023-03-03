@@ -1,11 +1,5 @@
 app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $http, $cookies, $location, dpnService, dpnToast, $mdDialog, dpnDialog) {
 
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', {
-            'page_title': 'Save qr code',
-            'page_path': $location.url()
-        });
-    });
     // init qrcode object
     $scope.qrcode_chatSupport = true;
     $scope.qrcode = {
@@ -28,8 +22,8 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
     $scope.isProcessingSubmit = false;
 
     $scope.photoUploadElement = document.getElementById('qrPhotoUploadButtonForApp');
-
-    var isLoaded = false;
+    
+    var isLoaded= false;
 
     $scope.serviceFinished = false;
 
@@ -37,10 +31,10 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
     // Observer to react on base64 upload from CN1 app
     // ------------------------------------------------
     var inputElement = document.getElementById('qrPhotoUploadButtonForApp');
-    var observer = new MutationObserver(function (mutations) {
-        mutations.forEach(function (mutation) {
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
             if (mutation.type === 'attributes' && mutation.attributeName === 'base64') {
-                $timeout(function () {
+                $timeout(function() {
                     $scope.qrcode.photo = inputElement.getAttribute('base64');
                 });
             }
@@ -54,7 +48,7 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
     // load qrcode
     //--------------
     // predvyplni pushnotification, emailnotification, active stavy podla nastavenia z UserBeany
-    var userLoadWrapper = function () {
+    var userLoadWrapper = function () { 
         var call_user_load_callBackSuccess = function (data) {
             $scope.qrcode.pushNotification = data.pushNotification;
             $scope.qrcode.emailNotification = data.emailNotification;
@@ -86,7 +80,7 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
             if (scrollElement) {
                 scrollElement.scrollLeft = leftPos;
             }
-
+            
             isLoaded = true;
             $scope.serviceFinished = true;
             $scope.enableInput();
@@ -127,7 +121,7 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
     // ------------
     // Click events
     // ------------
-    $scope.click_saveqrcode = function (qrcode) {
+    $scope.click_saveqrcode = function(qrcode) {
         if (qrcode.id > 0) {
             if (!$scope.qrcode.name || isBlank($scope.qrcode.name)) {
                 $scope.qrcode.name = $scope.serverData.name;
@@ -139,15 +133,15 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
         }
     }
 
-    $scope.click_deletePhoto = function () {
+    $scope.click_deletePhoto = function() {
         $scope.photoUploadElement.setAttribute('value', "");
         $scope.photoUploadElement.setAttribute('base64', "");
         document.getElementById("qrPhotoUploadImageForApp").setAttribute('src', "");
         $scope.qrcode.photo = ''; // THIS must be LAST, because there is watcher firing on qrcode.photo
-    }
+    }    
 
     // to enable input after services loads
-    $scope.enableInput = function () {
+    $scope.enableInput = function() {
         document.getElementById('saveqrcode_nameInput').removeAttribute('disabled');
         document.getElementById('saveqrcode_aliasInput').removeAttribute('disabled');
         document.getElementById('saveqrcode_descriptionInput').removeAttribute('disabled');
@@ -204,7 +198,7 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
         //     dpnToast.showToast("ERROR", 'Invalid input', 'Empty description!');
         //     return;
         // }
-        if (!isBlank(qrcode.photo) && qrcode.photo.includes("data:image/gif;base64")) {
+        if (!isBlank(qrcode.photo) && qrcode.photo.includes("data:image/gif;base64")){
             $scope.isProcessingSubmit = false;
             dpnToast.showToast("ERROR", 'Invalid input', "App doesn't support .GIF!");
             return;
@@ -224,17 +218,17 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
     }
 
     // call send qr by email service
-    $scope.isSendingEmail = false;
-    $scope.call_sendQrByEmail = function () {
+    $scope.isSendingEmail  = false;
+    $scope.call_sendQrByEmail = function() {
         if (!$scope.isSendingEmail) {
             $scope.isSendingEmail = true;
             dpnToast.showToast("INFO", 'Downloading DMN Code', 'Sending DMN Code to your email.');
 
-            var call_qrcode_generateCallBackSuccess = function () {
+            var call_qrcode_generateCallBackSuccess = function() {
                 dpnToast.showToast("INFO", 'Done', 'Email was send');
                 $scope.isSendingEmail = false;
             }
-            var call_qrcode_generateCallBackError = function (data) {
+            var call_qrcode_generateCallBackError = function(data) {
                 dpnService.processErrorResponse(data);
                 $scope.isSendingEmail = false;
             }
@@ -242,7 +236,7 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
         }
     }
 
-    $scope.click_back = function () {
+    $scope.click_back = function() {
         if ($scope.qrcode.id > 0) {
             if (!$scope.qrcode.name || isBlank($scope.qrcode.name)) {
                 $scope.qrcode.name = $scope.serverData.name;
@@ -258,7 +252,7 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
     }
 
     $scope.$watch('qrcode.photo', function (newValue, oldValue, scope) {
-        if ($scope.qrcode.id > 0 && isLoaded) {
+        if($scope.qrcode.id > 0 && isLoaded){
             if (!$scope.qrcode.name || isBlank($scope.qrcode.name)) {
                 $scope.qrcode.name = $scope.serverData.name;
             }
@@ -269,13 +263,13 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
         }
     });
 
-    $scope.scrollRight = function () {
+    $scope.scrollRight = function() {
         var scrollCont = document.getElementById('saveqrcode_scroll_container');
         var iconWidth = 50; //document.getElementById('saveqrcode_scroll_SPORT').style.minWidth;
         scrollCont.scrollLeft = scrollCont.scrollLeft + iconWidth;
     }
 
-    $scope.scrollLeft = function () {
+    $scope.scrollLeft = function() {
         var scrollCont = document.getElementById('saveqrcode_scroll_container');
         var iconWidth = 50;//document.getElementById('saveqrcode_scroll_SPORT').style.width;
         scrollCont.scrollLeft = scrollCont.scrollLeft - iconWidth;
@@ -297,10 +291,10 @@ app.controller("SaveqrcodeController", function ($rootScope, $scope, $timeout, $
 
     // autosave for text input. Saves 2 seconds after change. Clear this action if meanwhile there is new change to alias, description, name
     var timer = null;
-    $scope.autosave = function () {
+    $scope.autosave = function() {
         clearTimeout(timer);
-        timer = setTimeout(function () {
-            if ($scope.qrcode.name && !isBlank($scope.qrcode.name)
+        timer = setTimeout(function() {
+            if ($scope.qrcode.name && !isBlank($scope.qrcode.name) 
                 &&
                 $scope.qrcode.ownerAlias && !isBlank($scope.qrcode.ownerAlias)
             ) {

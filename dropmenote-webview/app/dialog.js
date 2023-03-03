@@ -1,11 +1,11 @@
-app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
+app.service("dpnDialog", ['$mdDialog', function ($mdDialog ) {
 
     var parentEl = angular.element(document.body);
 
     // ----------------
     // Show dialogs
     // ----------------
-    this.showLogin = function (login, password) {
+    this.showLogin = function(login, password) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -19,7 +19,7 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
         });
     };
 
-    this.showLogout = function () {
+    this.showLogout = function() {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -29,8 +29,8 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
             controller: 'DLogoutController'
         });
     };
-
-    this.showForgotPasswordEmailSend = function (paramEmail) {
+    
+    this.showForgotPasswordEmailSend = function(paramEmail) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -42,13 +42,13 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
         });
     }
 
-    this.showSaveData = function (paramObject, paramScreen, paramDestination) {
+    this.showSaveData = function(paramObject, paramScreen, paramDestination) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
             templateUrl: 'd_savedata.html',
             locals: {
-                paramObject: paramObject,
+                paramObject: paramObject, 
                 paramScreen: paramScreen,
                 paramDestination: paramDestination
             },
@@ -56,7 +56,7 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
         });
     }
 
-    this.showForgotPassword = function (paramEmail, paramEmailRecoveryToken) {
+    this.showForgotPassword = function(paramEmail, paramEmailRecoveryToken) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -70,7 +70,7 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
         });
     };
 
-    this.showChangePassword = function (paramLogin) {
+    this.showChangePassword = function(paramLogin) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -82,7 +82,7 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
         });
     };
 
-    this.showInboxFilter = function () {
+    this.showInboxFilter = function() {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -92,7 +92,7 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
         });
     };
 
-    this.showRegistration = function () {
+    this.showRegistration = function() {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -105,7 +105,7 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
         });
     };
 
-    this.showEditBlacklist = function (parent, blacklistObject, paramShowDelete) {
+    this.showEditBlacklist = function(parent, blacklistObject, paramShowDelete) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -121,7 +121,7 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
     };
 
     // qr code share user
-    this.showAddQrCodeShare = function (parent, param_qrcode_id) {
+    this.showAddQrCodeShare = function(parent, param_qrcode_id) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -134,8 +134,8 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
             controller: 'DAddQrCodeShareController'
         });
     };
-
-    this.showEditQrCodeShare = function (param_parent, param_qrshareObject, param_qrcode_id) {
+    
+    this.showEditQrCodeShare = function(param_parent, param_qrshareObject, param_qrcode_id) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -151,7 +151,7 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
     };
 
     // dialog na prompt 'instaluj si appku'
-    this.showInstallApp = function (parent) {
+    this.showInstallApp = function(parent) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -162,9 +162,9 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
             controller: 'DInstallAppController'
         });
     };
-
+    
     // dialog chat blacklist
-    this.showChatBlacklist = function (parent, param_blacklist) {
+    this.showChatBlacklist = function(parent, param_blacklist) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -177,10 +177,10 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
             controller: 'DChatBlacklistController'
         });
     };
-
+    
 
     // dialog chat blacklist
-    this.showQrNotFound = function (parent) {
+    this.showQrNotFound = function(parent) {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,
@@ -192,23 +192,10 @@ app.service("dpnDialog", ['$mdDialog', function ($mdDialog) {
             controller: 'DQrCodeNotFoundController'
         });
     };
-
-    // dialog na prompt 'instaluj si appku'
-    this.showCanOwnQrCode = function (parent) {
-        $mdDialog.show({
-            fullscreen: true,
-            parent: parentEl,
-            templateUrl: 'd_qrcodeown.html',
-            locals: {
-                param_parent: parent,
-            },
-            controller: 'DQrCodeNotFoundController'
-        });
-    };
     /*
     * Toto je klasicky Confirmation dialog. Message, ano a cancel. Pouziva sa napriakld na delete zaznamov.
     */
-    this.showConfirmationDialog = function () {
+    this.showConfirmationDialog = function() {
         $mdDialog.show({
             fullscreen: true,
             parent: parentEl,

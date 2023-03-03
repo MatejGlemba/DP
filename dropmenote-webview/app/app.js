@@ -6,17 +6,18 @@
 var webappVersion = "?v=13";
 
 // Localhost
-var configuration_baseUrl = "http://localhost:8080/dropmenote-ws";
-var configuration_wsUrl = "ws://localhost:8080/dropmenote-ws/websocket";
+// var configuration_baseUrl = "http://localhost/starbug-dropmenote-ws";
+// var configuration_wsUrl = "ws://localhost/starbug-dropmenote-ws/websocket";
 
-//var configuration_baseUrl = "http://20.223.207.85:8080/dropmenote-ws";
-//var configuration_wsUrl = "ws://20.223.207.85:8080/dropmenote-ws/websocket";
 // PetoD
-//var configuration_baseUrl = "http://185.28.100.172:9080/starbug-dropmenote-ws-1.0-SNAPSHOT-dev";
-//var configuration_wsUrl = "ws://185.28.100.172:9080/starbug-dropmenote-ws-1.0-SNAPSHOT-dev/websocket";
+// var configuration_baseUrl = "http://192.168.88.205:8080/starbug-dropmenote-ws";
+// var configuration_wsUrl = "ws://192.168.88.205:8080/starbug-dropmenote-ws/websocket";
 
-// var configuration_baseUrl = "https://app.dropmenote.com/starbug-dropmenote-ws-1.0-SNAPSHOT";
-// var configuration_wsUrl = "wss://app.dropmenote.com/starbug-dropmenote-ws-1.0-SNAPSHOT/websocket";
+//var configuration_baseUrl = "https://app.dropmenote.com/starbug-dropmenote-ws-1.0-SNAPSHOT";
+//var configuration_wsUrl = "wss://app.dropmenote.com/starbug-dropmenote-ws-1.0-SNAPSHOT/websocket";
+
+var configuration_baseUrl = "https://app.dropmenote.com/dropmenote-ws";
+var configuration_wsUrl = "wss://app.dropmenote.com/dropmenote-ws/websocket";
 
 var userSessionToken = "token";
 var deviceId = "";
@@ -34,19 +35,8 @@ var app = angular.module("DropMeNoteAppUI", [
     "ngMaterial", // Toast
     "ngCookies",
     "luegg.directives",
-    "textAngular",
 ]);
-app.config(function ($provide) {
-    // this demonstrates how to register a new tool and add it to the default toolbar
-    $provide.decorator('taOptions', ['$delegate', function (taOptions) { // $delegate is the taOptions we are decorating
-        //'redo', 'undo', 'clear',
-        taOptions.toolbar = [
-            ['bold', 'italics', 'underline', 'strikeThrough', 'ul', 'ol', 'justifyLeft', 'justifyCenter', 'justifyRight', 'indent', 'outdent']
-        ];
-        // add the button to the default toolbar definition
-        return taOptions;
-    }])
-});
+
 app.run(function ($transform) {
     window.$transform = $transform;
 });
@@ -56,7 +46,6 @@ app.run(function ($transform) {
 // feature (i.e. close sidebar on backbutton) you should setup 'reloadOnSearch: false'
 // in order to avoid unwanted routing.
 //
-
 app.config(function ($routeProvider) {
     $routeProvider.when("/saveqrcode", {
         templateUrl: "s_saveqrcode.html" + webappVersion,
@@ -115,7 +104,7 @@ app.config(function ($routeProvider) {
         reloadOnSearch: false,
     });
     $routeProvider.when("/", {
-        templateUrl: "s_inbox.html" + webappVersion,
+        templateUrl: "s_qrcodelist.html" + webappVersion,
         reloadOnSearch: false,
     });
     $routeProvider.when("/d_forgotpasswordemailsend", {

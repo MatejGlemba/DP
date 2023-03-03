@@ -1,11 +1,5 @@
-app.controller("BlacklistController", function ($rootScope, $scope, $location, $http, $cookies, dpnService, dpnToast, dpnDialog) {
+app.controller("BlacklistController", function ($rootScope, $scope, $http, $cookies, dpnService, dpnToast, dpnDialog) {
 
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', {
-            'page_title': 'Blacklist',
-            'page_path': $location.url()
-        });
-    });
     // ----------------
     // load data
     // ----------------
@@ -19,7 +13,7 @@ app.controller("BlacklistController", function ($rootScope, $scope, $location, $
     };
 
     // call webservice
-    $scope.init = function () {
+    $scope.init = function (){
         dpnService.call_blacklist_loadBlackList(loadBlackList_callbackSuccess, loadBlackList_callbackError);
     }
 
@@ -34,12 +28,12 @@ app.controller("BlacklistController", function ($rootScope, $scope, $location, $
         dpnDialog.showEditBlacklist($scope, blacklistObject, true);
     }
 
-    $scope.click_back = function () {
+    $scope.click_back = function() {
         if (!isDialogDisplayed()) {
-            window.open("#/setting", "_self");
+            window.open("#/setting" , "_self");
         }
     }
-
+    
     // ------------
     // Init function
     // ------------

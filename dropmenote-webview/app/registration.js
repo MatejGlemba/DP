@@ -1,11 +1,5 @@
-app.controller("DRegistrationController", function ($rootScope, $location, $scope, $http, $cookies, dpnService, dpnToast) {
+app.controller("DRegistrationController", function ($rootScope, $scope, $http, $cookies, dpnService, dpnToast) {
 
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', {
-            'page_title': 'Registration',
-            'page_path': $location.url()
-        });
-    });
     // init data
     $scope.registration = {
         login: '',
@@ -22,7 +16,7 @@ app.controller("DRegistrationController", function ($rootScope, $location, $scop
         // callbacks
         var click_registration_submit_callbackSuccess = function () {
             dpnToast.showToast("INFO", 'Registration', 'Your accout was created');
-            window.open("#/inbox", "_self");
+            window.open("#/qrcodelist", "_self");
         };
         var click_registration_submit_callbackError = function (data) {
             dpnService.processErrorResponse(data);
@@ -56,7 +50,7 @@ app.controller("DRegistrationController", function ($rootScope, $location, $scop
         }
     };
 
-    $scope.click_back = function () {
-
+    $scope.click_back = function() {
+        
     }
 });

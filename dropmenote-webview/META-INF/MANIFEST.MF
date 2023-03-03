@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Archiver-Version: Plexus Archiver
+Created-By: Apache Maven 3.6.0
+Built-By: matej
+Build-Jdk: 11.0.14.1
+Specification-Title: dropmenote-ws
+Specification-Version: 1.0-SNAPSHOT
+Specification-Vendor: Pivotal Software, Inc.
+Implementation-Title: dropmenote-ws
+Implementation-Version: 1.0-SNAPSHOT
+Implementation-Vendor-Id: io.dpm
+Implementation-Vendor: Pivotal Software, Inc.
+

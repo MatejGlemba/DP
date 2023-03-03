@@ -1,11 +1,5 @@
 app.controller("SettingController", function ($rootScope, $scope, $http, $cookies, $location, dpnService, dpnToast, dpnDialog, $timeout) {
 
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', {
-            'page_title': 'Settings',
-            'page_path': $location.url()
-        });
-    });
     // init data
     // get previous saved state
     var storedUser = localStorage.getItem('user');
@@ -28,13 +22,13 @@ app.controller("SettingController", function ($rootScope, $scope, $http, $cookie
         let copy = Array.from($scope.user, (item) => {
             let obj = Object.assign({}, item)
             for (let key of Object.keys(obj)) {
-                if (key.startsWith('_') || key === '$$hashKey') {
-                    delete obj[key]
-                }
+              if (key.startsWith('_') || key === '$$hashKey') {
+                delete obj[key]
+              }
             }
             return obj
         });
-        localStorage.setItem('user', JSON.stringify({ user: copy }));
+        localStorage.setItem('user', JSON.stringify({user: copy}));
     }
 
     // ---------------
@@ -112,17 +106,17 @@ app.controller("SettingController", function ($rootScope, $scope, $http, $cookie
     }
 
     // show logout dialog
-    $scope.click_logout = function () {
+    $scope.click_logout = function() {
         dpnDialog.showLogout();
     }
 
-    $scope.scrollRight = function () {
+    $scope.scrollRight = function() {
         var scrollCont = document.getElementById('setting_scroll_container');
         var iconWidth = 50; //document.getElementById('setting_P1').style.minWidth;
         scrollCont.scrollLeft = scrollCont.scrollLeft + iconWidth;
     }
 
-    $scope.scrollLeft = function () {
+    $scope.scrollLeft = function() {
         var scrollCont = document.getElementById('setting_scroll_container');
         var iconWidth = 50;//document.getElementById('setting_P1').style.width;
         scrollCont.scrollLeft = scrollCont.scrollLeft - iconWidth;
@@ -136,11 +130,10 @@ app.controller("SettingController", function ($rootScope, $scope, $http, $cookie
 
     // autosave for text input. Saves 2 seconds after change. Clear this action if meanwhile there is new change to alias
     var timer = null;
-    $scope.autosave = function () {
+    $scope.autosave = function() {
         clearTimeout(timer);
-        timer = setTimeout(function () {
-            $scope.click_saveuser_submit($scope.user);
-        }
-            , 1500);
+        timer = setTimeout(function() {
+            $scope.click_saveuser_submit($scope.user);}
+        , 1500);
     }
 });

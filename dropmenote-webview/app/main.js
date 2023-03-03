@@ -1,24 +1,21 @@
-app.controller("MainController", ['$rootScope', '$cookies', '$scope', '$http', '$location', 'dpnService', 'dpnToast', '$window', function ($rootScope, $cookies, $scope, $http, $location, dpnService, dpnToast, $window) {
+app.controller("MainController", ['$rootScope', '$cookies', '$scope', '$http', 'dpnService', 'dpnToast', '$window', function ($rootScope, $cookies, $scope, $http, dpnService, dpnToast, $window) {
 
-    $scope.$on('$routeChangeSuccess', function (event) {
-        gtag('config', 'G-HW2X468HDZ', { page: $location.path() });
-    });
     var param_q = getUrlParam('q');
     if (param_q && param_q != 'null' && param_q != 'undefined') {
         window.open("#/infoqrcode?q=" + param_q, "_self");
     }
     // TODO toto treba refaktornut, este to nie je hotove. rozrobeny task pre hidovanie pozadia
     // get cookie, if doesnt exist, return empty string
-    $scope.getCookieTokenObject = function () {
+    $scope.getCookieTokenObject = function() {
         // var cookie = $cookies.get("dpn_token");
         var cookie = localStorage.getItem("dpn_token");
-        if (cookie) {
+        if(cookie){
             try {
                 return JSON.parse(cookie);
-            } catch (e) {
+            }catch(e){
                 return JSON.parse('{"date": 0, "token":""}');
             }
-        } else {
+        }else{
             return JSON.parse('{"date": 0, "token":""}');
         }
     }
@@ -32,11 +29,11 @@ app.controller("MainController", ['$rootScope', '$cookies', '$scope', '$http', '
         $rootScope.loading = false;
     });
 
-    $scope.isUserLogged = function () {
+    $scope.isUserLogged = function(){
         var tokenFromSession = $scope.getCookieTokenObject().token;
-        if (tokenFromSession == undefined || tokenFromSession == null || tokenFromSession == '') {
+        if (tokenFromSession == undefined || tokenFromSession == null || tokenFromSession == '' ){
             return false;
-        } else {
+        }else{
             return true;
         }
     }
@@ -48,31 +45,31 @@ app.controller("MainController", ['$rootScope', '$cookies', '$scope', '$http', '
         var footerDeadeSettingDiv = document.getElementById('headerSettingDiv');
         var headerQRcodeDiv = document.getElementById('headerQRcodeDiv');
 
-        if ($window.innerHeight < initSizeHeight) {
+        if($window.innerHeight < initSizeHeight){
             // hide footer and header
-            if (footerDiv != null) {
-                footerDiv.style.display = "none";
+            if(footerDiv != null){
+                footerDiv.style.display = "none"; 
             }
 
-            if (footerDeadeSettingDiv != null) {
-                footerDeadeSettingDiv.style.display = "none";
+            if(footerDeadeSettingDiv != null){
+                footerDeadeSettingDiv.style.display = "none"; 
             }
 
-            if (headerQRcodeDiv != null) {
-                headerQRcodeDiv.style.display = "none";
+            if(headerQRcodeDiv != null){
+                headerQRcodeDiv.style.display = "none"; 
             }
-        } else {
+        }else{
             // show footer and header
-            if (footerDiv != null) {
-                footerDiv.style.display = "block";
+            if(footerDiv != null){
+                footerDiv.style.display = "block"; 
             }
 
-            if (footerDeadeSettingDiv != null) {
-                footerDeadeSettingDiv.style.display = "block";
+            if(footerDeadeSettingDiv != null){
+                footerDeadeSettingDiv.style.display = "block"; 
             }
 
-            if (headerQRcodeDiv != null) {
-                headerQRcodeDiv.style.display = "block";
+            if(headerQRcodeDiv != null){
+                headerQRcodeDiv.style.display = "block"; 
             }
         }
 

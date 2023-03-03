@@ -14,14 +14,9 @@
             //var tutorialUrl = "http://localhost:65040/tutorial.html?di=";
 
             // production
-            // var baseUrl = "https://app.dropmenote.com/";
-            // var tutorialUrl = "https://app.dropmenote.com/tutorial.html?di=";
+             var baseUrl = "https://app.dropmenote.com/";
+             var tutorialUrl = "https://app.dropmenote.com/tutorial.html?di=";
 
-            //var baseUrl = "http://app.dropmenote.com/";
-            //var tutorialUrl = "http://app.dropmenote.com/tutorial.html?di=";
-
-            var baseUrl = "http://localhost:8080/";
-            var tutorialUrl = "http://localhost:8080/tutorial.html?di=";
             //var baseUrl = "http://phu.starbug.eu/abo/";
             //var tutorialUrl = "http://phu.starbug.eu/abo/tutorial.html?di=";
 
@@ -58,7 +53,7 @@
                 }
                 if (cookieToken) {
                     // window.open(baseUrl + "?v=" + version + "&di=" + deviceId + "#/qrcodelist", "_self");
-                    window.open(baseUrl+"?qrcode_id=&qrcode_name=")
+                    window.open(baseUrl+ "?v=" + version + "&di=" + deviceId + "#/inbox", "_self")
                     //window.open(baseUrl + "#/inbox?v=" + version + "&di=" + deviceId, "_self");
                 } else {
                     window.open(tutorialUrl + deviceId + "&v=" + version, "_self");
