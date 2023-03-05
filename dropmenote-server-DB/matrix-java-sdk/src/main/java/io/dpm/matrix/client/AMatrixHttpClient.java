@@ -40,10 +40,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
 import java8.util.Objects;
 import java8.util.Optional;
 
@@ -293,11 +293,15 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
     public String handleRateLimited(MatrixHttpRequest matrixRequest, MatrixErrorInfo info) {
         ScheduledFuture<String> schedule = Executors.newSingleThreadScheduledExecutor()
                 .schedule(() -> execute(matrixRequest), 3, TimeUnit.SECONDS);
-        try {
-            return Futures.getDone(schedule);
+        return Futures.getUnchecked(schedule);
+        /*try {
+            return schedule.get(5, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             throw new MatrixClientRequestException(info, "Request was rate limited.");
-        }
+        } catch (InterruptedException | TimeoutException e ) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }*/
         //throw new MatrixClientRequestException(info, "Request was rate limited.");
         // TODO Add default handling of rate limited call, i.e. repeated call after given time interval.
         // 1. Wait for timeout
@@ -319,11 +323,15 @@ public abstract class AMatrixHttpClient implements MatrixClientRaw {
                                                                    MatrixErrorInfo info) {
         ScheduledFuture<MatrixHttpContentResult> schedule = Executors.newSingleThreadScheduledExecutor()
                 .schedule(() -> executeContentRequest(matrixRequest), 3, TimeUnit.SECONDS);
-        try {
-            return Futures.getDone(schedule);
+        return Futures.getUnchecked(schedule);
+        /*try {
+            return schedule.get(5, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             throw new MatrixClientRequestException(info, "Request was rate limited.");
-        }
+        } catch (InterruptedException | TimeoutException e ) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }*/
 
         //throw new MatrixClientRequestRateLimitedException(info, "Request was rate limited.");
         // TODO Add default handling of rate limited call, i.e. repeated call after given time interval.
