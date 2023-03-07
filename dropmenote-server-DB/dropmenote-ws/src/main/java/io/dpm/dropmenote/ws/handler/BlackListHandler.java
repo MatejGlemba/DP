@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
+import io.dpm.dropmenote.ws.services.KafkaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,10 @@ public class BlackListHandler extends AbstractHandler implements SessionPermissi
 
 	@Autowired
 	private BlacklistService blacklistService;
+
+	@Autowired
+	private KafkaService kafkaService;
+
 
 	/**
 	 * 
@@ -75,7 +80,13 @@ public class BlackListHandler extends AbstractHandler implements SessionPermissi
 			blacklistBean = BlackListDto.mapInto(new BlacklistBean(), blackListRequest);
 		}
 		blacklistBean.setOwner(sessionBean.getUser());
-
+		// poslat do kafky nove blacklist data
+		/*
+		 * blacklistbean.getOwner().getUserUiid()	:	owner uuid
+		 * blacklistbean.getUiid()					:	target user uuid
+		 * blacklistbean.getNote()					:	data
+		 *
+		 * */
 		// Response
 		BlackListResponse response = BlackListDto.mapInto(new BlackListResponse(), blacklistService.save(blacklistBean));
 		httpResposne.setHeader(ControllerConstant.TOKEN_HEADER, sessionService.generateNewToken(sessionBean));

@@ -102,7 +102,7 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
         // Text messagge
         try {
         	// TODO: tu nema co byt token, mal sa pri logine ulozit do session a potom tahat odtial
-        	// {"type": "TEXT_MESSAGE", "message": "text spravy", "token": "token alebo fingerprint" }
+			// {"type": "TEXT_MESSAGE", "message": "text spravy", "token": "token alebo fingerprint" }
         	WebsocketTextMessageRequest request = requestMappingUtil._mapObjectFromString(WebsocketTextMessageRequest.class, message.getPayload());
             
     	if(										

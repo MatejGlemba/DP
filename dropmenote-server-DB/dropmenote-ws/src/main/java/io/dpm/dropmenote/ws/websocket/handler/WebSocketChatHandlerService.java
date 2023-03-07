@@ -3,6 +3,7 @@ package io.dpm.dropmenote.ws.websocket.handler;
 import java.io.IOException;
 import java.util.List;
 
+import io.dpm.dropmenote.ws.services.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,13 +18,6 @@ import io.dpm.dropmenote.ws.bean.SessionBean;
 import io.dpm.dropmenote.ws.bean.UserBean;
 import io.dpm.dropmenote.ws.constants.ConfigurationConstant;
 import io.dpm.dropmenote.ws.exception.EmailException;
-import io.dpm.dropmenote.ws.services.BlacklistService;
-import io.dpm.dropmenote.ws.services.DeviceService;
-import io.dpm.dropmenote.ws.services.EmailService;
-import io.dpm.dropmenote.ws.services.MatrixService;
-import io.dpm.dropmenote.ws.services.PushNotificationService;
-import io.dpm.dropmenote.ws.services.QRCodeService;
-import io.dpm.dropmenote.ws.services.SessionService;
 import io.dpm.dropmenote.ws.utils.AESCipher;
 import io.dpm.dropmenote.ws.websocket.session.ChatSessionInfo;
 import io.dpm.dropmenote.ws.websocket.websocketObject.websocketRequest.LoginRequest;
@@ -42,7 +36,7 @@ public class WebSocketChatHandlerService {
 	
 	@Value("${secret.crypting.key}")
 	private String CRYPTING_KEY;
-	
+
 	@Autowired
 	SessionService sessionService;
 
@@ -66,8 +60,11 @@ public class WebSocketChatHandlerService {
     
     @Autowired
     private BlacklistService blacklistService;
-	
-    public void handleUserLogin(WebSocketSession session, final LoginRequest request) throws Exception {
+
+	@Autowired
+	private KafkaService kafkaService;
+
+	public void handleUserLogin(WebSocketSession session, final LoginRequest request) throws Exception {
     	if(!session.isOpen()) {
     		throw new Exception("Session closed");
     	}
@@ -214,7 +211,21 @@ public class WebSocketChatHandlerService {
 				}
 			}
 		}).start();
-		
+
+		// poslat novu spravu do kafky
+		new Thread(() -> {
+			/*
+			 * request.getMessage()			: data
+			 * userBean.getUuid()			: user_id
+			 * loginRequest.getRoomId()		: room_id
+			 * loginRequest.getQrCodeUiid()	: qrcode_id
+			 * */
+			var qrCodeUUID = matrixService.getQrCodeUuidByMatrixRoomId(sessionInfo.getMatrixRoomId());
+			KafkaService.INPUT_DATA inputData = new KafkaService.MESSAGE_DATA(sessionInfo.getMatrixRoomId(),
+					qrCodeUUID, userBean.getUuid(), request.getMessage());
+			kafkaService.produce(KafkaService.TOPIC.MESSAGE_DATA, inputData);
+		}).start();
+
 		String encryptedMsg = AESCipher.encrypt(CRYPTING_KEY, request.getMessage()).getData();
 		room.sendText(encryptedMsg);
 		

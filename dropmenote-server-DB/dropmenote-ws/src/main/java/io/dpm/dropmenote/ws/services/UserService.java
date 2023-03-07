@@ -1,6 +1,7 @@
 package io.dpm.dropmenote.ws.services;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 import javax.transaction.Transactional;
 
@@ -224,5 +225,9 @@ public class UserService {
 	 */
 	public String findAliasByMatrixRoomId(String username, String matrixRoomId) {
 		return userRepository.findAliasByMatrixRoomId(username, matrixRoomId);
+	}
+
+	public List<UserEntity> loadAll() {
+		return userRepository.findAll();
 	}
 }

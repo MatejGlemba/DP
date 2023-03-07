@@ -5,6 +5,7 @@ from kafka_tools.deserializers import MessageData, BlacklistData, ImageData, Mes
 from utils import decrypt, encrypt
 from ai_tools import hatespeechChecker, spamChecker, text_Preprocessing, topic_modeling
 from mongoDB_tools.dbclient import MongoDBHandler
+import csv
 
 def runAnalysisOnMessages():
     messageTopicHandler = KafkaHandler.MessageTopicHandler()
@@ -85,5 +86,16 @@ def serviceStarter():
     p2.join()
     p3.join()
 
+
+def dataDumper():
+    messageTopicHandler = KafkaHandler.MessageTopicHandler()
+    with open('results/countries.csv', 'w', encoding='UTF8', newline='') as f:
+        while True:
+            msgData : MessageData = messageTopicHandler.consume()
+            writer = csv.DictWriter(f, fieldnames=msgData.__dict__.keys)
+            writer.writeheader()
+            writer.writerows(msgData.__dict__)
+
 if __name__ == "__main__":
-    serviceStarter()
+    #serviceStarter()
+    dataDumper()

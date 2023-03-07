@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -22,8 +23,9 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-//@Service
+@Service
 public class KafkaService<K, V> {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaService.class);
@@ -37,19 +39,21 @@ public class KafkaService<K, V> {
     private KafkaProducer<K, String> kafkaProducer;
     private KafkaTopicConsumerLoop kafkaTopicConsumer;
 
-    //@PostConstruct
+    @PostConstruct
     public void init() {
         Properties config = new Properties();
         config.put("client.id", CLIENT_ID);
         config.put("bootstrap.servers", BOOTSTRAP_SERVERS);
         config.put("acks", ACKS);
         config.put("group.id", "foo");
+        config.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        config.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         this.kafkaProducer = new KafkaProducer<K, String>(config);
         LOG.debug("Kafka producer is initialized.");
     }
 
-    public void produce(final String topic, final INPUT_DATA value) {
-        final ProducerRecord<K, String> record = new ProducerRecord<>(topic, null, serializeToJson(value));
+    public void produce(final TOPIC topic, final INPUT_DATA value) {
+        final ProducerRecord<K, String> record = new ProducerRecord<>(topic.name(), null, serializeToJson(value));
         kafkaProducer.send(record, (metadata, e) -> {
             if (e != null)
                 LOG.warn("Send failed for record {}", record, e);
@@ -299,5 +303,9 @@ public class KafkaService<K, V> {
 
     public enum NOTIFICATION_TYPE {
         SPAM, HATE
+    }
+
+    public enum TOPIC {
+        MESSAGE_DATA, BLACKLIST_DATA
     }
 }

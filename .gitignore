@@ -27,8 +27,11 @@ hs_err_pid*
 *.iml
 *target/
 
-#server
+#analyzer
+env/
+__pycache__/
 
+#server
 dropmenote-server-DB/dropmenote-ws/src/main/webapp/app/META-INF/
 dropmenote-server-DB/dropmenote-ws/src/main/resources/
 dropmenote-server-DB/dropmenote-ws/src/main/webapp/node_modules/

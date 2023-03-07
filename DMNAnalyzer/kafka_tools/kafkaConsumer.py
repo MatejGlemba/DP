@@ -13,4 +13,5 @@ class KafkaConsumer:
     def consume(self, dataClass=deserializers.KafkaDeserializerObject) -> Message:
         msg = self.__consumer.poll(self.__poll_timeout)
         if msg:
+            msg = msg.value()
             return deserializers.deserialize(jsonValue=msg, dataClass=dataClass)

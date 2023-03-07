@@ -34,5 +34,5 @@ class MessageData(KafkaDeserializerObject):
   data: str
 
 
-def deserialize(jsonValue: str, dataClass: Type[T]) -> T:
+def deserialize(jsonValue: bytes, dataClass: Type[T]) -> T:
   return from_dict(data_class=dataClass, data=eval(jsonValue))
