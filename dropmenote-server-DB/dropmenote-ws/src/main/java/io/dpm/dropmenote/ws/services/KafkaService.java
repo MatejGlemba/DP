@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.awt.image.DataBufferByte;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -86,6 +87,13 @@ public class KafkaService<K, V> {
         kafkaTopicConsumer.shutdown();
     }
 
+    public void startProducer(TOPIC topic, List<INPUT_DATA> listOfInputData) {
+        new Thread(() -> {
+            for (INPUT_DATA inputData : listOfInputData) {
+                produce(topic, inputData);
+            }
+        }).start();
+    }
     private class KafkaTopicConsumerLoop implements Runnable {
         private static final String TOPIC = "message_outputs";
         private final KafkaConsumer<K, V> kafkaConsumer;

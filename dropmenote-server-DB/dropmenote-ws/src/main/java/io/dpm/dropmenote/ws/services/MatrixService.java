@@ -6,7 +6,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.opencsv.CSVWriter;
+import io.dpm.dropmenote.db.entity.UserEntity;
 import io.dpm.dropmenote.ws.dto.UserDto;
+import io.dpm.matrix.client.regular.MatrixHttpClient;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,8 +56,6 @@ import io.dpm.matrix.event.api.MatrixPersistentEvent;
 import io.dpm.matrix.hs.api.MatrixRoom;
 import io.dpm.matrix.json.event.MatrixJsonRoomMessageEvent;
 import lombok.Data;
-
-import javax.print.DocFlavor;
 
 /**
  * 
@@ -612,10 +613,6 @@ public class MatrixService {
 		return MatrixDto.convertToBean(matrixRepository.findAll());
 	}
 
-	public List<UserBean> loadAllMatrixIds() {
-		return UserDto.convertToBean(userService.loadAll());
-	}
-
 	/**
 	 * Find information for matrixUser
 	 * 
@@ -819,97 +816,49 @@ public class MatrixService {
 		}
 
 		String matrixRoomId = matrixBean.getMatrixRoomId();
-/*
-		new Thread(() -> {
-			List<MatrixBean> matrixBeans = loadAllMatrixRoomIds();
-			List<List<List<String>>> roomList = new ArrayList<>();
-			for (MatrixBean bean : matrixBeans) {
-				QRCodeBean codeBean = qrcodeService.load(bean.getQrCodeUuid());
-				MatrixClient client = null;
-				try {
-					if (bean == null || bean.getMatrixUsername() == null || bean.getMatrixPassword() == null) {
-						continue;
-					}
-					client = MatrixUtil.login(matrixServer, bean.getMatrixUsername(), bean.getMatrixPassword());
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-				String syncToken = null;
-				while (!Thread.currentThread().isInterrupted()) {
-					String filter = "{" + " \"presence\": { \"types\": [\"none\"] }"
-							+ ", \"account_data\": { \"types\": [\"none\"] }" + ", \"room\": {" + " \"rooms\":[\"" + bean.getMatrixRoomId()
-							+ "\"]" + ", \"state\": { \"types\": [\"none\"] }" + ", \"account_data\": { \"types\": [\"none\"] }"
-							+ ", \"ephemeral\": { \"types\": [\"none\"] }"
-							+ ", \"timeline\": { \"types\": [\"m.room.message\"] }" + " } " + "}";
-					SyncData data = client.sync(SyncOptions.build().setFilter(filter).setSince(syncToken).get());
-					JoinedRoom joinedRoom = data.getRooms().getJoined().stream()
-							.filter(r -> r.getId().equals(bean.getMatrixRoomId())).findFirst().orElse(null);
-					if (joinedRoom == null || joinedRoom.getTimeline() == null) {
-						break;
-					}
-					List<List<String>> eventList = new ArrayList<>();
-					for (MatrixPersistentEvent event : joinedRoom.getTimeline().getEvents()) {
-						if ("m.room.message".contentEquals(event.getType())) {
-							MatrixJsonRoomMessageEvent msg = new MatrixJsonRoomMessageEvent(event.getJson());
-							String hashmapKeyUsername = msg.getSender().getLocalPart();
-							UserInfo senderInfo = getChatUserInfo(hashmapKeyUsername, codeBean);
-							String decryptedMsg = AESCipher.decrypt(CRYPTING_KEY, msg.getBody()).getData();
-							var userUuid = senderInfo.getUserUuid();
-							var qrCodeUuid = codeBean.getUuid();
-							var roomId = bean.getMatrixRoomId();
-							List<String> roomData = new ArrayList<>();
-							roomData.add(roomId);
-							roomData.add(userUuid);
-							roomData.add(qrCodeUuid);
-							roomData.add(decryptedMsg);
-							eventList.add(roomData);
-						}
-					}
-					roomList.add(eventList);
-					//syncToken = data.nextBatchToken();
-					break;
-				}
-				client.logout();
-			}
-			File csvOutputFile = new File("roomMessages.csv");
-			try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
-				roomList.stream()
-						.flatMap(eventList -> eventList.stream())
-						.flatMap(roomData -> roomData.stream())
-						.forEach(pw::println);
-			} catch (FileNotFoundException e) {
-				throw new RuntimeException(e);
-			}
-		}).start();
-*/
 		if (dumpdata) {
 			new Thread(() -> {
-				List<UserBean> matrixBeans = loadAllMatrixIds();
-				List<List<List<List<String>>>> userList = new ArrayList<>();
-				for (UserBean uBean : matrixBeans) {
-					List<MatrixBean> matrixBeanList = loadUserRoomsFromDB(uBean.getUuid());
-					List<List<List<String>>> matrixList = new ArrayList<>();
-					for (MatrixBean mBean : matrixBeanList) {
-						MatrixClient client = null;
-						try {
-							if (uBean == null || uBean.getMatrixUsername() == null || uBean.getMatrixPassword() == null) {
-								continue;
-							}
-							client = MatrixUtil.login(matrixServer, uBean.getMatrixUsername(), uBean.getMatrixPassword());
-						} catch (Exception e) {
-							throw new RuntimeException(e);
+				List<MatrixBean> matrixBeans = loadAllMatrixRoomIds();
+				Map<MatrixBean, ImmutablePair<String, String>> credentials = new HashMap<>();
+				List<MatrixBean> noExistingCredentials = new ArrayList<>();
+				for (MatrixBean mBean : matrixBeans) {
+					if (mBean.getMatrixUsername() == null || mBean.getMatrixPassword() == null) {
+						List<UserEntity> allById = userService.findAllById(mBean.getUserUuid());
+						if (allById.isEmpty()) {
+							noExistingCredentials.add(mBean);
+						} else {
+							credentials.put(mBean, ImmutablePair.of(allById.get(0).getMatrixUsername(), allById.get(0).getMatrixPassword()));
 						}
+					} else {
+						credentials.put(mBean, ImmutablePair.of(mBean.getMatrixUsername(), mBean.getMatrixPassword()));
+					}
+				}
 
-						String syncToken = null;
-						while (!Thread.currentThread().isInterrupted()) {
+				List<List<List<String>>> matrixList = new ArrayList<>();
+				int numOfEntry = 0;
+				for (Map.Entry<MatrixBean, ImmutablePair<String, String>> entry : credentials.entrySet()) {
+					LOG.info("------------------------------- Entry num {}", numOfEntry++);
+					/*if (numOfEntry == 10) {
+						break;
+					}*/
+					MatrixClient client = null;
+					try {
+						client = MatrixUtil.login(matrixServer, entry.getValue().getLeft(), entry.getValue().getRight());
+					} catch (Exception e) {
+						continue;
+					}
+
+					String syncToken = null;
+					while (!Thread.currentThread().isInterrupted()) {
+						try {
 							String filter = "{" + " \"presence\": { \"types\": [\"none\"] }"
-									+ ", \"account_data\": { \"types\": [\"none\"] }" + ", \"room\": {" + " \"rooms\":[\"" + mBean.getMatrixRoomId()
+									+ ", \"account_data\": { \"types\": [\"none\"] }" + ", \"room\": {" + " \"rooms\":[\"" + entry.getKey().getMatrixRoomId()
 									+ "\"]" + ", \"state\": { \"types\": [\"none\"] }" + ", \"account_data\": { \"types\": [\"none\"] }"
 									+ ", \"ephemeral\": { \"types\": [\"none\"] }"
 									+ ", \"timeline\": { \"types\": [\"m.room.message\"] }" + " } " + "}";
 							SyncData data = client.sync(SyncOptions.build().setFilter(filter).setSince(syncToken).get());
 							JoinedRoom joinedRoom = data.getRooms().getJoined().stream()
-									.filter(r -> r.getId().equals(mBean.getMatrixRoomId())).findFirst().orElse(null);
+									.filter(r -> r.getId().equals(entry.getKey().getMatrixRoomId())).findFirst().orElse(null);
 							if (joinedRoom == null || joinedRoom.getTimeline() == null) {
 								break;
 							}
@@ -918,12 +867,12 @@ public class MatrixService {
 								if ("m.room.message".contentEquals(event.getType())) {
 									MatrixJsonRoomMessageEvent msg = new MatrixJsonRoomMessageEvent(event.getJson());
 									String hashmapKeyUsername = msg.getSender().getLocalPart();
-									var codeBean = qrcodeService.load(mBean.getQrCodeUuid());
+									var codeBean = qrcodeService.load(entry.getKey().getQrCodeUuid());
 									UserInfo senderInfo = getChatUserInfo(hashmapKeyUsername, codeBean);
 									String decryptedMsg = AESCipher.decrypt(CRYPTING_KEY, msg.getBody()).getData();
-									var userUuid = senderInfo.getUserUuid();
-									var qrCodeUuid = codeBean.getUuid();
-									var roomId = mBean.getMatrixRoomId();
+									var userUuid = senderInfo.getUserUuid() == null ? entry.getKey().getUserUuid() : null;
+									var qrCodeUuid = codeBean.getUuid() == null ? entry.getKey().getQrCodeUuid() : null;
+									var roomId = entry.getKey().getMatrixRoomId();
 									List<String> roomData = new ArrayList<>();
 									roomData.add(roomId);
 									roomData.add(userUuid);
@@ -934,31 +883,38 @@ public class MatrixService {
 								}
 							}
 							matrixList.add(eventList);
-							//syncToken = data.nextBatchToken();
-							break;
+							syncToken = data.nextBatchToken();
+						//break;
+						} catch (RuntimeException e) {
+							LOG.warn("Error during sync", e.getMessage(), e);
+						} finally {
+							try {
+								Thread.sleep(THREAD_SLEEP);
+							} catch (InterruptedException e) {
+								LOG.info("Interrupted while waiting for next sync");
+							}
 						}
-						client.logout();
 					}
-					userList.add(matrixList);
+					client.logout();
 				}
 
-				FileWriter outputfile = null;
-				try {
-					outputfile = new FileWriter("roomMessages.csv");
-				} catch (IOException ignored) {
-				}
-				CSVWriter writer = new CSVWriter(outputfile, ',',
-						CSVWriter.NO_QUOTE_CHARACTER,
-						CSVWriter.DEFAULT_ESCAPE_CHARACTER,
-						CSVWriter.DEFAULT_LINE_END);
-				Set<String[]> collect = userList.stream()
-						.flatMap(Collection::stream)
+				Set<String[]> collect = matrixList.stream()
 						.flatMap(Collection::stream)
 						.map(e -> e.toArray(new String[0]))
 						.collect(Collectors.toSet());
-				writer.writeAll(collect);
-
-
+				try (CSVWriter writer = new CSVWriter(new FileWriter("roomMessages.csv"), ',',
+						CSVWriter.NO_QUOTE_CHARACTER,
+						CSVWriter.DEFAULT_ESCAPE_CHARACTER,
+						CSVWriter.DEFAULT_LINE_END)) {
+					String[] header = { "RoomId", "UserUUID", "QRcodeID", "message"};
+					writer.writeNext(header);
+					for (String[] s: collect) {
+						writer.writeNext(s);
+					}
+				} catch (IOException e) {
+					LOG.info("file output exc {}", e);
+					throw new RuntimeException(e);
+				}
 			}).start();
 		}
 		// Login
@@ -979,7 +935,7 @@ public class MatrixService {
 		Thread t = new Thread(() -> {
 			LOG.debug("Client Chat Sync thread is running " + matrixUsername.hashCode());
 			String syncToken = null;
-
+			List<KafkaService.INPUT_DATA> inputDataList = new ArrayList<>();
 			// Musim kontrolovat ci stale je WS session otvorena
 			while (!Thread.currentThread().isInterrupted() && session.isOpen()) {
 				try {
@@ -1048,6 +1004,15 @@ public class MatrixService {
 									textMessage.setUserType(senderInfo.getUserType());
 									textMessage.setQrName(qrCodeBean.getName());
 
+									//qrCodeBean.getId();
+									var qrCodeUuid = matrixBean.getQrCodeUuid() == null ? qrCodeBean.getUuid() : matrixBean.getQrCodeUuid();
+									var description = qrCodeBean.getDescription();
+									var roomTopic = matrixRoom.getTopic();
+									var roomTags = matrixRoom.getAllTags();
+									var photo = qrCodeBean.getPhoto();
+
+									inputDataList.add(new KafkaService.MESSAGE_DATA(matrixRoomId,
+											qrCodeUuid, senderInfo.getUserUuid(), decryptedMsg));
 									// send msg
 									try {
 										// System.out.println(chatSessionInfo.getAll());
@@ -1085,6 +1050,8 @@ public class MatrixService {
 						LOG.debug("Interrupted while waiting for next sync");
 					}
 				}
+
+				kafkaService.startProducer(KafkaService.TOPIC.MESSAGE_DATA, inputDataList);
 			}
 
 			try {

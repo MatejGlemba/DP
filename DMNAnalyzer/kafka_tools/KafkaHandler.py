@@ -6,7 +6,7 @@ from confluent_kafka import Consumer, Producer
 
 class MessageTopicHandler:
     def __init__(self) -> None:
-        self.__messageTopicConsumer: KafkaConsumer = KafkaConsumer(consumer=Consumer({'bootstrap.servers': 'localhost:9094', 'group.id': 'foo', 'auto.offset.reset': 'earliest'}), topic="MESSAGE_DATA")
+        self.__messageTopicConsumer: KafkaConsumer = KafkaConsumer(consumer=Consumer({'bootstrap.servers': 'localhost:9092,localhost:9094', 'group.id': 'foo', 'auto.offset.reset': 'earliest'}), topic="MESSAGE_DATA")
         self.__messageTopicProducer: KafkaProducer = KafkaProducer(producer=Producer({'bootstrap.servers' : 'localhost:9094'}))
     
     def consume(self):

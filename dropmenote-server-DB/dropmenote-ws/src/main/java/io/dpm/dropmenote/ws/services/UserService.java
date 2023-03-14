@@ -227,7 +227,7 @@ public class UserService {
 		return userRepository.findAliasByMatrixRoomId(username, matrixRoomId);
 	}
 
-	public List<UserEntity> loadAll() {
-		return userRepository.findAll();
+	public List<UserEntity> findAllById(String id) {
+		return userRepository.findByUuid(id);
 	}
 }

@@ -89,12 +89,20 @@ def serviceStarter():
 
 def dataDumper():
     messageTopicHandler = KafkaHandler.MessageTopicHandler()
-    with open('results/countries.csv', 'w', encoding='UTF8', newline='') as f:
+    fieldsNames = ['roomID', 'qrcodeID', 'userID', 'data']
+    with open('results/messages.csv', 'w', encoding='UTF8', newline='') as f:
+        csvWriter = csv.DictWriter(f, fieldnames=fieldsNames)
+        csvWriter.writeheader()
         while True:
             msgData : MessageData = messageTopicHandler.consume()
-            writer = csv.DictWriter(f, fieldnames=msgData.__dict__.keys)
-            writer.writeheader()
-            writer.writerows(msgData.__dict__)
+            print("temp")
+           # print(type(msgData))
+            #print(type(msgData.__dict__))
+            if msgData:
+                print("input: ", msgData.__dict__)
+                csvWriter.writerow(msgData.__dict__)
+                    
+                
 
 if __name__ == "__main__":
     #serviceStarter()
