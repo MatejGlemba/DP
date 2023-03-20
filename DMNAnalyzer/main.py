@@ -1,7 +1,6 @@
 from multiprocessing import Process
-import multiprocessing
 from kafka_tools import KafkaHandler
-from kafka_tools.deserializers import MessageData, BlacklistData, ImageData, MessageOutputs
+from kafka_tools.deserializers import MessageData, BlacklistData, MessageOutputs, RoomData
 from utils import decrypt, encrypt
 from ai_tools import hatespeechChecker, spamChecker, text_Preprocessing, topic_modeling
 from mongoDB_tools.dbclient import MongoDBHandler
@@ -47,7 +46,6 @@ def runAnalysisOnMessages():
             ner_labels = encrypt.encrypt(ner_labels)
             MongoDBHandler.updateData("topic-model-outputs", ["roomID", "qrcodeID"], [msgData.roomID, msgData.qrcodeID], ["vectors", "ner_labels"], [model_topics, ner_labels])
 
-
 def runAnalysisOnBlacklist():
     blacklistTopicHandler = KafkaHandler.BlacklistTopicHandler()
 
@@ -62,16 +60,16 @@ def runAnalysisOnBlacklist():
         model_topics = encrypt.encrypt(model_topics)
         MongoDBHandler.updateData("entity-model-user", "userId", blkData.userID, "topics", model_topics)
 
-def runAnalysisOnImage():
-    imageTopicHandler = KafkaHandler.ImageTopicHandler()
+def runAnalysisOnRoom():
+    roomDataTopicHandler = KafkaHandler.RoomDataTopicHandler()
 
     while True:
         # receive data 
-        imgData : ImageData = imageTopicHandler.consume()
+        roomData : RoomData = roomDataTopicHandler.consume()
         # decrypt data 
-        image : bytearray = decrypt.decrypt(imgData.image)
+        image : bytearray = decrypt.decrypt(roomData.image)
         image_topics = topic_modeling.runImageModel(image)
-        image_topics = topic_modeling.updatePercentage(imgData.qrcodeID, image_topics)
+        image_topics = topic_modeling.updatePercentage(roomData.qrcodeID, image_topics)
         # TODO : resolve calculation of percetange in model with image topics
 
 def serviceStarter():
@@ -79,7 +77,7 @@ def serviceStarter():
     p1.start()
     p2 = Process(target=runAnalysisOnBlacklist)
     p2.start()
-    p3 = Process(target=runAnalysisOnImage)
+    p3 = Process(target=runAnalysisOnRoom)
     p3.start()
 
     p1.join()
@@ -102,8 +100,47 @@ def dataDumper():
                 print("input: ", msgData.__dict__)
                 csvWriter.writerow(msgData.__dict__)
                     
+def BLDumper():
+    blackListHandler = KafkaHandler.BlacklistTopicHandler()
+    fieldsNames = ['userID', 'notes']
+    with open('results/bldata.csv', 'w', encoding='UTF8', newline='') as f:
+        csvWriter = csv.DictWriter(f, fieldnames=fieldsNames)
+        csvWriter.writeheader()
+        while True:
+            blData : BlacklistData = blackListHandler.consume()
+            print("temp BL")
+           # print(type(msgData))
+            #print(type(msgData.__dict__))
+            if blData:
+                print("input: ", blData.__dict__)
+                csvWriter.writerow(blData.__dict__)
                 
+def RoomDumper():
+    roomDataHandler = KafkaHandler.RoomDataTopicHandler()
+    fieldsNames = ['qrcodeID', 'photoPath', 'description', 'roomName']
+    with open('results/roomData.csv', 'w', encoding='UTF8', newline='') as f:
+        csvWriter = csv.DictWriter(f, fieldnames=fieldsNames)
+        csvWriter.writeheader()
+        while True:
+            roomData : RoomData = roomDataHandler.consume()
+            print("temp Room")
+           # print(type(msgData))
+            #print(type(msgData.__dict__))
+            if roomData:
+                print("input: ", roomData.__dict__)
+                csvWriter.writerow(roomData.__dict__)
 
 if __name__ == "__main__":
     #serviceStarter()
-    dataDumper()
+    p1 = Process(target=BLDumper)
+    p1.start()
+    p2 = Process(target=dataDumper)
+    p2.start()
+    p3 = Process(target=RoomDumper)
+    p3.start()
+
+    p1.join()
+    p2.join()
+    p3.join()
+
+    #dataDumper()

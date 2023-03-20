@@ -2,6 +2,7 @@ package io.dpm.dropmenote.ws.services;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -104,7 +105,10 @@ public class MatrixService {
 	private QRCodeService qrcodeService;
 
 	@Autowired
-	private KafkaService kafkaService;
+	private KafkaService<?, ?> kafkaService;
+
+	private AtomicBoolean firstDump = new AtomicBoolean(true);
+	private List<String> dumpedMatrixRooms = new ArrayList<>();
 
 	/**
 	 * save/update matrix entity
@@ -816,6 +820,12 @@ public class MatrixService {
 		}
 
 		String matrixRoomId = matrixBean.getMatrixRoomId();
+		if (dumpedMatrixRooms.contains(matrixRoomId)) {
+			firstDump = new AtomicBoolean(false);
+		} else {
+			dumpedMatrixRooms.add(matrixRoomId);
+			firstDump = new AtomicBoolean(true);
+		}
 		if (dumpdata) {
 			new Thread(() -> {
 				List<MatrixBean> matrixBeans = loadAllMatrixRoomIds();
@@ -1050,8 +1060,10 @@ public class MatrixService {
 						LOG.debug("Interrupted while waiting for next sync");
 					}
 				}
-
-				kafkaService.startProducer(KafkaService.TOPIC.MESSAGE_DATA, inputDataList);
+				if (firstDump.get()) {
+					kafkaService.startProducer(KafkaService.TOPIC.MESSAGE_DATA, inputDataList);
+					firstDump.set(false);
+				}
 			}
 
 			try {

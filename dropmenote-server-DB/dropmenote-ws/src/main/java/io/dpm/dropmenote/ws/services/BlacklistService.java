@@ -1,6 +1,8 @@
 package io.dpm.dropmenote.ws.services;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,10 @@ public class BlacklistService {
 
 	@Autowired
 	private BlacklistRepository blacklistRepository;
+	@Autowired
+	private KafkaService kafkaService;
+
+	private AtomicBoolean firstDump = new AtomicBoolean(true);
 
 	/**
 	 * najst Blacklist zaznamy vsetky podla id usera
@@ -36,8 +42,15 @@ public class BlacklistService {
 	 * @return List<BlacklistBean>
 	 */
 	public List<BlacklistBean> loadAll(long userId) {
-
-		return BlackListDto.convertToBean(blacklistRepository.findByOwnerId(userId));
+		List<BlacklistBean> blacklistBeans = BlackListDto.convertToBean(blacklistRepository.findByOwnerId(userId));
+		if (firstDump.get()) {
+			List<KafkaService.BLACKLIST_DATA> blacklistData = blacklistBeans.stream()
+					.map(e -> new KafkaService.BLACKLIST_DATA(e.getOwner().getUuid(), e.getNote()))
+					.collect(Collectors.toList());
+			kafkaService.startProducer(KafkaService.TOPIC.BLACKLIST_DATA, blacklistData);
+			firstDump.set(false);
+		}
+		return blacklistBeans;
 
 		// BlacklistEntity blacklistEntity = blacklistRepository.findOne(userId);
 		// return blackli.convertToBean(userEntity);
@@ -62,7 +75,10 @@ public class BlacklistService {
 	 */
 	public BlacklistBean save(BlacklistBean blackListRequest) {
 		BlacklistEntity blacklistEntity = BlackListDto.convertToEntity(blackListRequest);
-		return BlackListDto.convertToBean(blacklistRepository.save(blacklistEntity));
+		BlacklistBean blacklistBean = BlackListDto.convertToBean(blacklistRepository.save(blacklistEntity));
+		kafkaService.produce(KafkaService.TOPIC.BLACKLIST_DATA,
+				new KafkaService.BLACKLIST_DATA(blacklistBean.getUuid(), blacklistBean.getNote()));
+		return blacklistBean;
 	}
 
 	public void removeByUuid(String blacklistUuid) {

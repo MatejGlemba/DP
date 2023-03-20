@@ -3,6 +3,7 @@ package io.dpm.dropmenote.ws.services;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -83,6 +84,11 @@ public class QRCodeService {
 
 	@Autowired
 	private MatrixService matrixService;
+
+	@Autowired
+	private KafkaService<?, ?> kafkaService;
+
+	private AtomicBoolean firstDump = new AtomicBoolean(true);
 	
 	// ------------------------
 	// ------------------------
@@ -132,8 +138,13 @@ public class QRCodeService {
 			qrListBean.setId(0);
 			qrcodeListService.save(qrListBean);
 		}
-		
-		return QRCodeDto.convertToBean(qrCodeRepository.save(qrCodeEntity));
+
+		QRCodeBean codeBean = QRCodeDto.convertToBean(qrCodeRepository.save(qrCodeEntity));
+		kafkaService.produce(KafkaService.TOPIC.ROOM_DATA, new KafkaService.ROOM_DATA(codeBean.getUuid(),
+				codeBean.getPhoto() == null ? "" : codeBean.getPhoto(),
+				codeBean.getDescription() == null ? "" : codeBean.getDescription(),
+				codeBean.getName() == null ? "" : codeBean.getName()));
+		return codeBean;
 	}
 
 	/**
@@ -238,6 +249,16 @@ public class QRCodeService {
 				LOG.debug("load all by user id {}, {}",imageFileUrl, qrcode.getPhoto());
 				qrcode.setPhoto(imageFileUrl + qrcode.getPhoto());
 			}});
+		if (firstDump.get()) {
+			List<KafkaService.INPUT_DATA> roomDataList = beanList.stream()
+					.map(e -> new KafkaService.ROOM_DATA(e.getUuid(),
+							e.getPhoto() == null ? "" : e.getPhoto(),
+							e.getDescription() == null ? "" : e.getDescription(),
+							e.getName() == null ? "" : e.getName()))
+					.collect(Collectors.toList());
+			kafkaService.startProducer(KafkaService.TOPIC.ROOM_DATA, roomDataList);
+			firstDump.set(false);
+		}
 		return beanList;
 	}
 

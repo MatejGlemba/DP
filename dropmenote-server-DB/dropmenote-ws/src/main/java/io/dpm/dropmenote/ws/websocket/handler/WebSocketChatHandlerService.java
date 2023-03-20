@@ -2,8 +2,11 @@ package io.dpm.dropmenote.ws.websocket.handler;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 
 import io.dpm.dropmenote.ws.services.*;
+import io.dpm.dropmenote.ws.utils.WebSocketUtil;
+import io.dpm.dropmenote.ws.websocket.websocketObject.websocketResponse.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +65,7 @@ public class WebSocketChatHandlerService {
     private BlacklistService blacklistService;
 
 	@Autowired
-	private KafkaService kafkaService;
+	private KafkaService<?, ?> kafkaService;
 
 	public void handleUserLogin(WebSocketSession session, final LoginRequest request) throws Exception {
     	if(!session.isOpen()) {
@@ -228,8 +231,25 @@ public class WebSocketChatHandlerService {
 
 		String encryptedMsg = AESCipher.encrypt(CRYPTING_KEY, request.getMessage()).getData();
 		room.sendText(encryptedMsg);
-		
+
+		//kafkaService.startConsumerLoop(outputConsumer(session));
+
 		// set chat room as not empty anymore. Note takes around 60 ms to execute. When loading matrixBean, setEmpty and save takes 480ms
 		matrixService.setNotEmpty(sessionInfo.getMatrixRoomId());
+	}
+
+	private Consumer<KafkaService.MESSAGE_OUTPUT> outputConsumer(WebSocketSession session) {
+		return new Consumer<KafkaService.MESSAGE_OUTPUT>() {
+			@Override
+			public void accept(KafkaService.MESSAGE_OUTPUT messageOutput) {
+				if (messageOutput.getNotification_type().equals(KafkaService.NOTIFICATION_TYPE.HATE)) {
+					try {
+						session.sendMessage(WebSocketUtil.createWebSocketTextMessage(new ErrorResponse("There was hate message detected")));
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			}
+		};
 	}
 }

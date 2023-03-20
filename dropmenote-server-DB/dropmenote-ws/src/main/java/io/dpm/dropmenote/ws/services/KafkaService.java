@@ -76,8 +76,13 @@ public class KafkaService<K, V> {
         config.put("bootstrap.servers", BOOTSTRAP_SERVERS);
         config.put("acks", ACKS);
         config.put("group.id", "foo");
-        this.kafkaTopicConsumer = new KafkaTopicConsumerLoop(new KafkaConsumer<K, V>(config), topicConsumer);
-        new Thread(kafkaTopicConsumer).start();
+        config.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        config.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        if (kafkaTopicConsumer == null) {
+            this.kafkaTopicConsumer = new KafkaTopicConsumerLoop(new KafkaConsumer<K, V>(config), topicConsumer);
+        }
+        Thread t = new Thread(kafkaTopicConsumer);
+        t.start();
     }
 
     @PreDestroy
@@ -88,14 +93,16 @@ public class KafkaService<K, V> {
     }
 
     public void startProducer(TOPIC topic, List<INPUT_DATA> listOfInputData) {
-        new Thread(() -> {
+        //Thread t = new Thread(() -> {
             for (INPUT_DATA inputData : listOfInputData) {
                 produce(topic, inputData);
             }
-        }).start();
+          //  Thread.currentThread().interrupt();
+        //});
+        //t.start();
     }
     private class KafkaTopicConsumerLoop implements Runnable {
-        private static final String TOPIC = "message_outputs";
+        private static final String TOPIC = "MESSAGE_OUTPUT";
         private final KafkaConsumer<K, V> kafkaConsumer;
         private final CountDownLatch shutdownLatch;
         private final List<String> topics;
@@ -120,9 +127,11 @@ public class KafkaService<K, V> {
                 }
 
             } catch (WakeupException ex) {
+                Thread.currentThread().interrupt();
                 // ignore
             } catch (Exception e) {
                 LOG.error("Unexpected error", e);
+                Thread.currentThread().interrupt();
             } finally {
                 kafkaConsumer.close();
                 shutdownLatch.countDown();
@@ -144,7 +153,7 @@ public class KafkaService<K, V> {
         }
     }
 
-    public interface INPUT_DATA{}
+    public interface INPUT_DATA {}
 
     public static class MESSAGE_DATA implements INPUT_DATA {
         private String roomID;
@@ -193,32 +202,12 @@ public class KafkaService<K, V> {
     }
 
     public static class BLACKLIST_DATA implements INPUT_DATA {
-        private String roomID;
-        private String qrcodeID;
         private String userID;
         private String notes;
 
-        public BLACKLIST_DATA(String roomID, String qrcodeID, String userID, String notes) {
-            this.roomID = roomID;
-            this.qrcodeID = qrcodeID;
+        public BLACKLIST_DATA(String userID, String notes) {
             this.userID = userID;
             this.notes = notes;
-        }
-
-        public String getRoomID() {
-            return roomID;
-        }
-
-        public void setRoomID(String roomID) {
-            this.roomID = roomID;
-        }
-
-        public String getQrcodeID() {
-            return qrcodeID;
-        }
-
-        public void setQrcodeID(String qrcodeID) {
-            this.qrcodeID = qrcodeID;
         }
 
         public String getUserID() {
@@ -237,14 +226,17 @@ public class KafkaService<K, V> {
             this.notes = notes;
         }
     }
-
-    public static class IMAGE_DATA implements INPUT_DATA {
+    public static class ROOM_DATA implements INPUT_DATA {
         private String qrcodeID;
-        private DataBufferByte image;
+        private String photoPath;
+        private String description;
+        private String roomName;
 
-        public IMAGE_DATA(String qrcodeID, DataBufferByte image) {
+        public ROOM_DATA(String qrcodeID, String photoPath, String description, String roomName) {
             this.qrcodeID = qrcodeID;
-            this.image = image;
+            this.description = description;
+            this.photoPath = photoPath;
+            this.roomName = roomName;
         }
 
         public String getQrcodeID() {
@@ -255,12 +247,28 @@ public class KafkaService<K, V> {
             this.qrcodeID = qrcodeID;
         }
 
-        public DataBufferByte getImage() {
-            return image;
+        public String getPhotoPath() {
+            return photoPath;
         }
 
-        public void setImage(DataBufferByte image) {
-            this.image = image;
+        public void setPhotoPath(String photoPath) {
+            this.photoPath = photoPath;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public String getRoomName() {
+            return roomName;
+        }
+
+        public void setRoomName(String roomName) {
+            this.roomName = roomName;
         }
     }
     public static class MESSAGE_OUTPUT {
@@ -308,12 +316,11 @@ public class KafkaService<K, V> {
             return notification_type;
         }
     }
-
     public enum NOTIFICATION_TYPE {
         SPAM, HATE
     }
 
     public enum TOPIC {
-        MESSAGE_DATA, BLACKLIST_DATA
+        MESSAGE_DATA, BLACKLIST_DATA, ROOM_DATA, MESSAGE_OUTPUT
     }
 }

@@ -15,14 +15,14 @@ class MessageOutputs(KafkaDeserializerObject):
   type: str
 
 @dataclass
-class ImageData(KafkaDeserializerObject):
+class RoomData(KafkaDeserializerObject):
   qrcodeID: str
-  image: bytearray
+  photoPath: str
+  description: str
+  roomName: str
 
 @dataclass
 class BlacklistData(KafkaDeserializerObject):
-  roomID: str
-  qrcodeID: str
   userID: str
   notes: str
 
