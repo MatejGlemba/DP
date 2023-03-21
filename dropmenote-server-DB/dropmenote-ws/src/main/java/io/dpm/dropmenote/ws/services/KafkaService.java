@@ -16,11 +16,13 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +40,7 @@ public class KafkaService<K, V> {
     @Value("${kafka.acks}")
     private String ACKS;
     private KafkaProducer<K, String> kafkaProducer;
+    private KafkaConsumer<K, V> kafkaConsumer;
     private KafkaTopicConsumerLoop kafkaTopicConsumer;
 
     @PostConstruct
@@ -50,7 +53,16 @@ public class KafkaService<K, V> {
         config.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         config.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         this.kafkaProducer = new KafkaProducer<K, String>(config);
-        LOG.debug("Kafka producer is initialized.");
+        config = new Properties();
+        config.put("client.id", CLIENT_ID);
+        config.put("bootstrap.servers", BOOTSTRAP_SERVERS);
+        config.put("acks", ACKS);
+        config.put("group.id", "foo");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        this.kafkaConsumer = new KafkaConsumer<K, V>(config);
+        LOG.debug("Kafka service is initialized.");
     }
 
     public void produce(final TOPIC topic, final INPUT_DATA value) {
@@ -71,18 +83,11 @@ public class KafkaService<K, V> {
     }
 
     public void startConsumerLoop(final Consumer<MESSAGE_OUTPUT> topicConsumer) {
-        Properties config = new Properties();
-        config.put("client.id", CLIENT_ID);
-        config.put("bootstrap.servers", BOOTSTRAP_SERVERS);
-        config.put("acks", ACKS);
-        config.put("group.id", "foo");
-        config.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        config.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         if (kafkaTopicConsumer == null) {
-            this.kafkaTopicConsumer = new KafkaTopicConsumerLoop(new KafkaConsumer<K, V>(config), topicConsumer);
+            this.kafkaTopicConsumer = new KafkaTopicConsumerLoop(topicConsumer);
+            Thread t = new Thread(kafkaTopicConsumer);
+            t.start();
         }
-        Thread t = new Thread(kafkaTopicConsumer);
-        t.start();
     }
 
     @PreDestroy
@@ -90,6 +95,7 @@ public class KafkaService<K, V> {
         LOG.debug("Kafka producer is shutting down.");
         kafkaProducer.close();
         kafkaTopicConsumer.shutdown();
+        kafkaTopicConsumer = null;
     }
 
     public void startProducer(TOPIC topic, List<INPUT_DATA> listOfInputData) {
@@ -103,14 +109,11 @@ public class KafkaService<K, V> {
     }
     private class KafkaTopicConsumerLoop implements Runnable {
         private static final String TOPIC = "MESSAGE_OUTPUT";
-        private final KafkaConsumer<K, V> kafkaConsumer;
         private final CountDownLatch shutdownLatch;
         private final List<String> topics;
-        private final Consumer<MESSAGE_OUTPUT> topicConsumer;
+        private Consumer<MESSAGE_OUTPUT> topicConsumer;
 
-        public KafkaTopicConsumerLoop(final KafkaConsumer<K,V> consumer,
-                                      final Consumer<MESSAGE_OUTPUT> topicConsumer) {
-            this.kafkaConsumer = consumer;
+        public KafkaTopicConsumerLoop(final Consumer<MESSAGE_OUTPUT> topicConsumer) {
             this.shutdownLatch = new CountDownLatch(1);
             this.topicConsumer = topicConsumer;
             this.topics = Collections.singletonList(TOPIC);
@@ -122,7 +125,7 @@ public class KafkaService<K, V> {
                 kafkaConsumer.subscribe(topics);
                 LOG.debug("Kafka consumer subscribed to topic {}", TOPIC);
                 while (true) {
-                    ConsumerRecords<K, V> records = kafkaConsumer.poll(Duration.ofSeconds(Long.MAX_VALUE));
+                    ConsumerRecords<K, V> records = kafkaConsumer.poll(Duration.ofSeconds(5));
                     records.forEach(record -> topicConsumer.accept(deserialize(record.value())));
                 }
 
@@ -131,24 +134,26 @@ public class KafkaService<K, V> {
                 // ignore
             } catch (Exception e) {
                 LOG.error("Unexpected error", e);
-                Thread.currentThread().interrupt();
-            } finally {
-                kafkaConsumer.close();
-                shutdownLatch.countDown();
+                //Thread.currentThread().interrupt();
             }
         }
 
         private MESSAGE_OUTPUT deserialize(V value) {
+            ObjectMapper objectMapper = new ObjectMapper();
             try {
-                return new ObjectMapper().readValue((String) value, MESSAGE_OUTPUT.class);
+                String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree((String) value));
+                return objectMapper.readValue(json, MESSAGE_OUTPUT.class);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                LOG.debug("Problem with deserialization {}", e);
+                //throw new RuntimeException(e);
+                return new MESSAGE_OUTPUT();
             }
 
         }
         public void shutdown() throws InterruptedException {
             LOG.debug("Kafka consumer is shutting down.");
             kafkaConsumer.wakeup();
+            kafkaConsumer.close();
             shutdownLatch.await();
         }
     }
@@ -275,13 +280,14 @@ public class KafkaService<K, V> {
         private String roomID;
         private String qrcodeID;
         private String userID;
-        private NOTIFICATION_TYPE notification_type;
+        private NOTIFICATION_TYPE type;
 
-        public MESSAGE_OUTPUT(String roomID, String qrcodeID, String userID, String notification_type) {
+        public MESSAGE_OUTPUT() {}
+        public MESSAGE_OUTPUT(String roomID, String qrcodeID, String userID, String type) {
             this.roomID = roomID;
             this.qrcodeID = qrcodeID;
             this.userID = userID;
-            this.notification_type = NOTIFICATION_TYPE.valueOf(notification_type);
+            this.type = NOTIFICATION_TYPE.valueOf(type);
         }
 
         public void setRoomID(String roomID) {
@@ -296,8 +302,8 @@ public class KafkaService<K, V> {
             this.userID = userID;
         }
 
-        public void setNotification_type(String notification_type) {
-            this.notification_type = NOTIFICATION_TYPE.valueOf(notification_type);
+        public void setType(String type) {
+            this.type = NOTIFICATION_TYPE.valueOf(type);
         }
 
         public String getRoomID() {
@@ -312,8 +318,8 @@ public class KafkaService<K, V> {
             return userID;
         }
 
-        public NOTIFICATION_TYPE getNotification_type() {
-            return notification_type;
+        public NOTIFICATION_TYPE getType() {
+            return type;
         }
     }
     public enum NOTIFICATION_TYPE {

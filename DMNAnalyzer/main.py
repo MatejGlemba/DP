@@ -87,6 +87,7 @@ def serviceStarter():
 
 def dataDumper():
     messageTopicHandler = KafkaHandler.MessageTopicHandler()
+    messageOutputHandler = KafkaHandler.MessageOutputsTopicHandler()
     fieldsNames = ['roomID', 'qrcodeID', 'userID', 'data']
     with open('results/messages.csv', 'w', encoding='UTF8', newline='') as f:
         csvWriter = csv.DictWriter(f, fieldnames=fieldsNames)
@@ -99,6 +100,9 @@ def dataDumper():
             if msgData:
                 print("input: ", msgData.__dict__)
                 csvWriter.writerow(msgData.__dict__)
+                output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "HATE")
+                print("produce :", output.__dict__)
+                messageOutputHandler.produce(output)
                     
 def BLDumper():
     blackListHandler = KafkaHandler.BlacklistTopicHandler()

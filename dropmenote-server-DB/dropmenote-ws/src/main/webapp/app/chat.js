@@ -93,6 +93,8 @@ app.controller("ChatController", function ($rootScope, $anchorScroll, $scope, $h
 
                     if (received_msg.type == "ERROR") {
                         dpnToast.showToast("ERROR", "Communication error", "Problem with connection to server");
+                    } else if (received_msg.type == "MESSAGE_AI") {
+                        dpnToast.showToast("ERROR", "Problem with received message", received_msg.data)
                     }
                 } 
             });

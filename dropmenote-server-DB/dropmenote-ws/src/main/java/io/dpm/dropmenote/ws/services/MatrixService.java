@@ -3,12 +3,15 @@ package io.dpm.dropmenote.ws.services;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.opencsv.CSVWriter;
 import io.dpm.dropmenote.db.entity.UserEntity;
 import io.dpm.dropmenote.ws.dto.UserDto;
+import io.dpm.dropmenote.ws.websocket.websocketObject.websocketResponse.ErrorResponse;
+import io.dpm.dropmenote.ws.websocket.websocketObject.websocketResponse.MessageAIResponse;
 import io.dpm.matrix.client.regular.MatrixHttpClient;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -109,6 +112,8 @@ public class MatrixService {
 
 	private AtomicBoolean firstDump = new AtomicBoolean(true);
 	private List<String> dumpedMatrixRooms = new ArrayList<>();
+	private AtomicBoolean firstKafkaConsumerCreate = new AtomicBoolean(true);
+	private volatile WebSocketSession webSocketSession;
 
 	/**
 	 * save/update matrix entity
@@ -497,6 +502,7 @@ public class MatrixService {
 
 		Thread t = new Thread(() -> {
 			LOG.debug("Client Notifications Sync thread is running");
+
 			String syncToken = null;
 			// hashmap<matrixUsername, UserInfo>
 			HashMap<String, UserInfo> matrixUsersMap = new HashMap<>();
@@ -607,6 +613,21 @@ public class MatrixService {
 
 		t.setName("matrixNotificationsClientSync");
 		t.start();
+	}
+
+	private Consumer<KafkaService.MESSAGE_OUTPUT> outputConsumer() {
+		return new Consumer<KafkaService.MESSAGE_OUTPUT>() {
+			@Override
+			public void accept(KafkaService.MESSAGE_OUTPUT messageOutput) {
+				if (KafkaService.NOTIFICATION_TYPE.HATE.equals(messageOutput.getType())) {
+					try {
+						webSocketSession.sendMessage(WebSocketUtil.createWebSocketTextMessage(new MessageAIResponse("There was hate message detected")));
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			}
+		};
 	}
 
 	public MatrixBean loadByMatrixRoomId(String matrixRoomId) {
@@ -867,6 +888,17 @@ public class MatrixService {
 									+ ", \"ephemeral\": { \"types\": [\"none\"] }"
 									+ ", \"timeline\": { \"types\": [\"m.room.message\"] }" + " } " + "}";
 							SyncData data = client.sync(SyncOptions.build().setFilter(filter).setSince(syncToken).get());
+
+							// We check the invited rooms
+							try {
+								for (InvitedRoom invitedRoom : data.getRooms().getInvited()) {
+									// We auto-join rooms we are invited to
+									client.getRoom(invitedRoom.getId()).join();
+								}
+							} catch (Exception e) {
+								// unknown error
+							}
+
 							JoinedRoom joinedRoom = data.getRooms().getJoined().stream()
 									.filter(r -> r.getId().equals(entry.getKey().getMatrixRoomId())).findFirst().orElse(null);
 							if (joinedRoom == null || joinedRoom.getTimeline() == null) {
@@ -1014,6 +1046,15 @@ public class MatrixService {
 									textMessage.setUserType(senderInfo.getUserType());
 									textMessage.setQrName(qrCodeBean.getName());
 
+									if (firstKafkaConsumerCreate.get()) {
+										kafkaService.startConsumerLoop(outputConsumer());
+										firstKafkaConsumerCreate.set(false);
+									}
+									if (ChatIconPositionEnum.RIGHT.equals(textMessage.getPosition())) {
+										this.webSocketSession = session;
+									}
+
+
 									//qrCodeBean.getId();
 									var qrCodeUuid = matrixBean.getQrCodeUuid() == null ? qrCodeBean.getUuid() : matrixBean.getQrCodeUuid();
 									var description = qrCodeBean.getDescription();
@@ -1021,8 +1062,10 @@ public class MatrixService {
 									var roomTags = matrixRoom.getAllTags();
 									var photo = qrCodeBean.getPhoto();
 
-									inputDataList.add(new KafkaService.MESSAGE_DATA(matrixRoomId,
-											qrCodeUuid, senderInfo.getUserUuid(), decryptedMsg));
+									if (firstDump.get()) {
+										inputDataList.add(new KafkaService.MESSAGE_DATA(matrixRoomId,
+												qrCodeUuid, senderInfo.getUserUuid(), decryptedMsg));
+									}
 									// send msg
 									try {
 										// System.out.println(chatSessionInfo.getAll());

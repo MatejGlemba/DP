@@ -60,4 +60,4 @@ class KafkaSerializer(JSONEncoder):
 
 
 def serialize(obj: KafkaObject):
-    return json.dumps(obj.dump(), cls=KafkaSerializer)
+    return json.dumps(obj.__dict__, cls=KafkaSerializer)

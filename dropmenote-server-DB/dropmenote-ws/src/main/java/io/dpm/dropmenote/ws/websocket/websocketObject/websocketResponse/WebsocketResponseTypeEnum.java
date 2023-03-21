@@ -7,6 +7,6 @@ package io.dpm.dropmenote.ws.websocket.websocketObject.websocketResponse;
  */
 public enum WebsocketResponseTypeEnum {
 
-	SUCCESS, ERROR, INFO, SERVER_TIME, TEXT_MESSAGE, NOTIFICATION_TEXT_MESSAGGE
+	SUCCESS, ERROR, INFO, SERVER_TIME, TEXT_MESSAGE, NOTIFICATION_TEXT_MESSAGGE, MESSAGE_AI
 
 }

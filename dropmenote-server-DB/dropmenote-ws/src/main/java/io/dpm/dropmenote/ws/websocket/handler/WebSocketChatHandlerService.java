@@ -2,6 +2,7 @@ package io.dpm.dropmenote.ws.websocket.handler;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import io.dpm.dropmenote.ws.services.*;
@@ -232,24 +233,7 @@ public class WebSocketChatHandlerService {
 		String encryptedMsg = AESCipher.encrypt(CRYPTING_KEY, request.getMessage()).getData();
 		room.sendText(encryptedMsg);
 
-		//kafkaService.startConsumerLoop(outputConsumer(session));
-
 		// set chat room as not empty anymore. Note takes around 60 ms to execute. When loading matrixBean, setEmpty and save takes 480ms
 		matrixService.setNotEmpty(sessionInfo.getMatrixRoomId());
-	}
-
-	private Consumer<KafkaService.MESSAGE_OUTPUT> outputConsumer(WebSocketSession session) {
-		return new Consumer<KafkaService.MESSAGE_OUTPUT>() {
-			@Override
-			public void accept(KafkaService.MESSAGE_OUTPUT messageOutput) {
-				if (messageOutput.getNotification_type().equals(KafkaService.NOTIFICATION_TYPE.HATE)) {
-					try {
-						session.sendMessage(WebSocketUtil.createWebSocketTextMessage(new ErrorResponse("There was hate message detected")));
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				}
-			}
-		};
 	}
 }
