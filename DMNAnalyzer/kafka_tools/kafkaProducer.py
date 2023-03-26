@@ -21,3 +21,6 @@ class KafkaProducer:
 
         #self.__producer.poll(1)
         self.__producer.flush()
+    
+    def close() -> None:
+        self.__producer.close()

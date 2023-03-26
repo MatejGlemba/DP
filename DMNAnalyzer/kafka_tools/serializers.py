@@ -18,24 +18,24 @@ class MessageOutputs(KafkaObject):
         self.userID = userID
         self.type = type
 
-class ImageData(KafkaObject):
+class RoomData(KafkaObject):
     qrcodeID: str
-    image: bytearray
+    photoPath: str
+    description: str
+    roomName: str
 
-    def __init__(self, qrcodeID, image):
+    def __init__(self, qrcodeID, photoPath, description, roomName):
         self.qrcodeID = qrcodeID
-        self.image = image
+        self.photoPath = photoPath
+        self.description = description
+        self.roomName = roomName
 
 class BlacklistData(KafkaObject):
     roomID: str
-    qrcodeID: str
-    userID: str
     notes: str
 
-    def __init__(self, roomID, qrcodeID, userID, notes):
+    def __init__(self, roomID, notes):
         self.roomID = roomID
-        self.qrcodeID = qrcodeID
-        self.userID = userID
         self.notes = notes
 
 class MessageData(KafkaObject):

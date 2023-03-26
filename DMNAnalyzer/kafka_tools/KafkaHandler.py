@@ -14,6 +14,9 @@ class MessageTopicHandler:
     
     def produce(self, object=serializers.KafkaObject):
         self.__messageTopicProducer.produce(key="", value=object, topic="MESSAGE_DATA")
+
+    def close(self):
+        self.__messageTopicProducer.close()
     
 
 class BlacklistTopicHandler:
@@ -26,6 +29,9 @@ class BlacklistTopicHandler:
     
     def produce(self, object=serializers.KafkaObject):
         self.__blacklistTopicProducer.produce(key="", value=object, topic="BLACKLIST_DATA")
+    
+    def close(self):
+        self.__blacklistTopicProducer.close()
 
 class RoomDataTopicHandler:
     def __init__(self) -> None:
@@ -37,6 +43,9 @@ class RoomDataTopicHandler:
     
     def produce(self, object=serializers.KafkaObject):
         self.__roomDataTopicProducer.produce(key="", value=object, topic="ROOM_DATA")
+    
+    def close(self):
+        self.__roomDataTopicProducer.close()
 
 class MessageOutputsTopicHandler:
     def __init__(self) -> None:
@@ -48,3 +57,6 @@ class MessageOutputsTopicHandler:
     
     def produce(self, object=serializers.KafkaObject):
         self.__messageOutputsTopicProducer.produce(key="", value=object, topic="MESSAGE_OUTPUT")
+    
+    def close(self):
+        self.__messageOutputsTopicProducer.close()
