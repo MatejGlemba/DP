@@ -14,9 +14,12 @@ class MessageTopicHandler:
     
     def produce(self, object=serializers.KafkaObject):
         self.__messageTopicProducer.produce(key="", value=object, topic="MESSAGE_DATA")
+    
+    def flush(self):
+        self.__messageTopicProducer.flush()
 
-    def close(self):
-        self.__messageTopicProducer.close()
+    def commit(self):
+        self.__messageTopicConsumer.commit()
     
 
 class BlacklistTopicHandler:
@@ -30,8 +33,11 @@ class BlacklistTopicHandler:
     def produce(self, object=serializers.KafkaObject):
         self.__blacklistTopicProducer.produce(key="", value=object, topic="BLACKLIST_DATA")
     
-    def close(self):
-        self.__blacklistTopicProducer.close()
+    def flush(self):
+        self.__blacklistTopicProducer.flush()
+
+    def commit(self):
+        self.__blacklistTopicConsumer.commit()
 
 class RoomDataTopicHandler:
     def __init__(self) -> None:
@@ -43,9 +49,33 @@ class RoomDataTopicHandler:
     
     def produce(self, object=serializers.KafkaObject):
         self.__roomDataTopicProducer.produce(key="", value=object, topic="ROOM_DATA")
+
+    def flush(self):
+        self.__roomDataTopicProducer.flush()
+
+    def commit(self):
+        self.__roomDataTopicConsumer.commit()
+
+class RoomDataAndBlacklistTopicHandler:
+    def __init__(self) -> None:
+        self.__roomDataBLTopicConsumer: KafkaConsumer = KafkaConsumer(consumer=Consumer({'bootstrap.servers': 'localhost:9094', 'group.id': 'foo', 'auto.offset.reset': 'earliest'}), topic=["ROOM_DATA", "BLACKLIST_DATA"])
+        self.__roomDataTopicProducer: KafkaProducer = KafkaProducer(producer=Producer({'bootstrap.servers' : 'localhost:9094'}))
     
-    def close(self):
-        self.__roomDataTopicProducer.close()
+    def consume(self):
+        return self.__roomDataBLTopicConsumer.consume(dataClass=deserializers.KafkaDeserializerObject)
+    
+    def produce(self, object=serializers.KafkaObject):
+        if isinstance(object, serializers.BlacklistData):
+            #print("blacklist")
+            self.__roomDataTopicProducer.produce(key="", value=object, topic="BLACKLIST_DATA")
+        else:
+            #print("room")
+            self.__roomDataTopicProducer.produce(key="", value=object, topic="ROOM_DATA")
+    def flush(self):
+        self.__roomDataTopicProducer.flush()
+
+    def commit(self):
+        self.__roomDataBLTopicConsumer.commit()
 
 class MessageOutputsTopicHandler:
     def __init__(self) -> None:
@@ -57,6 +87,10 @@ class MessageOutputsTopicHandler:
     
     def produce(self, object=serializers.KafkaObject):
         self.__messageOutputsTopicProducer.produce(key="", value=object, topic="MESSAGE_OUTPUT")
+
+    def flush(self):
+        self.__messageOutputsTopicProducer.flush()
+
+    def commit(self):
+        self.__messageOutputsTopicConsumer.commit()
     
-    def close(self):
-        self.__messageOutputsTopicProducer.close()

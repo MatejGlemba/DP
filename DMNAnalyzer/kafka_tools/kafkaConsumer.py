@@ -1,18 +1,26 @@
 from confluent_kafka import Consumer, Message
 from kafka_tools import deserializers
 
-
 class KafkaConsumer:
-
-    def __init__(self, consumer: Consumer, topic: str, poll_timeout: float = 5.0) -> None:
-        self.__topic: str = topic
+    def __init__(self, consumer: Consumer, topic, poll_timeout: float = 1.0) -> None:
         self.__consumer = consumer
         self.__poll_timeout: float = poll_timeout
-        self.__consumer.subscribe([self.__topic])
+        self.__setTopics(topic)
+
+    def __setTopics(self, topic):
+        if isinstance(topic, str):
+            #print("subcribe topic")
+            self.__consumer.subscribe([topic])
+        else:
+            #print("subcribe more topics")
+            self.__consumer.subscribe(topic)
 
     def consume(self, dataClass=deserializers.KafkaDeserializerObject) -> Message:
-        msg = self.__consumer.poll(self.__poll_timeout)
-        print(msg)
+        msg = self.__consumer.poll(timeout=self.__poll_timeout)
+        #print(msg)
         if msg:
             msg = msg.value()
             return deserializers.deserialize(jsonValue=msg, dataClass=dataClass)
+    
+    def commit(self):
+        self.__consumer.commit(asynchronous=True)

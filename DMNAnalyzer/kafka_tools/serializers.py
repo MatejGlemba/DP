@@ -31,11 +31,11 @@ class RoomData(KafkaObject):
         self.roomName = roomName
 
 class BlacklistData(KafkaObject):
-    roomID: str
+    userID: str
     notes: str
 
-    def __init__(self, roomID, notes):
-        self.roomID = roomID
+    def __init__(self, userID, notes):
+        self.userID = userID
         self.notes = notes
 
 class MessageData(KafkaObject):

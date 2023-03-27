@@ -10,3 +10,4 @@ pyLDAvis==3.3.1
 pymongo==4.3.3
 spacy==3.4.4
 dacite==1.7.0
+pycryptodome==3.10.1
