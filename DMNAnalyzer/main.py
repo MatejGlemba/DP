@@ -1,131 +1,90 @@
+import json
 from multiprocessing import Process
+from typing import Dict, List, Tuple
 from kafka_tools import KafkaHandler
 from kafka_tools.deserializers import KafkaDeserializerObject, MessageData, BlacklistData, MessageOutputs, RoomData
 from utils.crypto import Crypto
+from utils.messagesCounter import Counter
 from ai_tools import hatespeechChecker, spamChecker, text_Preprocessing, topic_modeling
-from mongoDB_tools.MongoHandler import DBHandler, MessagesDBHandler, RoomDBHandler, BlacklistDBHandler
-import csv
+from mongoDB_tools.MongoHandler import DBHandler, MessagesDBHandler, RoomDBHandler, BlacklistDBHandler, EntityRoomDBHandler, EntityUserDBHandler
+from mongoDB_tools.EntityModels import RoomEntity, UserEntity
 
-def runAnalysisOnMessages():
-    messageTopicHandler = KafkaHandler.MessageTopicHandler()
-    messageOutputsHanlder = KafkaHandler.MessageOutputsTopicHandler()
-
-
-    incomingMessages = 0
-    while True:
-        # receive data 
-        msgData : MessageData = messageTopicHandler.consume()
-
-        # decrypt data 
-        msg : str = crypto.decrypt(msgData.data)
-        # check hatespeech
-        hate = hatespeechChecker.checkHate(msg)
-        if hate:
-            messageOutputsHanlder.produce(object=MessageOutputs(msgData.roomID, msgData.qrcodeID, msgData.userID, "hate"))
-            MongoDBHandler.updateData("entity-model-user", "userId", msgData.userID, "hate-speech", hate)
-        # check spam
-        spam = spamChecker.checkSpam(msg)
-        if spam:
-            messageOutputsHanlder.produce(object=MessageOutputs(msgData.roomID, msgData.qrcodeID, msgData.userID, "spam"))
-            MongoDBHandler.updateData("entity-model-user", "userId", msgData.userID, "spamming", hate)
-        
-        # save to DB
-        msg : str = encrypt.encrypt(msg)
-        MongoDBHandler.updateData("topic-model-messages", ["roomID", "qrcodeID"], [msgData.roomID, msgData.qrcodeID], "messages", msg)
-        
-        incomingMessages += 1
-        # check limit of new messages -> process text modeling
-        if incomingMessages > 15:
-            incomingMessages = 0
-            messages = MongoDBHandler.readData("topic-model-messages", ["roomID", "qrcodeID"], [msgData.roomID, msgData.qrcodeID])
-            messages = crypto.decrypt(messages)
-            messages, ner_labels = text_Preprocessing.process(messages)
-            model_topics = topic_modeling.runModel(messages)
-            model_topics = topic_modeling.updatePercentage(model_topics, ner_labels)
-            model_topics = encrypt.encrypt(model_topics)
-            ner_labels = encrypt.encrypt(ner_labels)
-            MongoDBHandler.updateData("topic-model-outputs", ["roomID", "qrcodeID"], [msgData.roomID, msgData.qrcodeID], ["vectors", "ner_labels"], [model_topics, ner_labels])
-
-def runAnalysisOnBlacklist():
-    blacklistTopicHandler = KafkaHandler.BlacklistTopicHandler()
-
-    while True:
-        # receive data 
-        blkData : BlacklistData = blacklistTopicHandler.consume()
-        # decrypt data 
-        notes : str = crypto.decrypt(blkData.notes)
-        notes, ner_labels = text_Preprocessing.process(notes)
-        model_topics = topic_modeling.runModel(notes)
-        model_topics = topic_modeling.updatePercentage(model_topics, ner_labels)
-        model_topics = encrypt.encrypt(model_topics)
-        MongoDBHandler.updateData("entity-model-user", "userId", blkData.userID, "topics", model_topics)
-
-def runAnalysisOnRoom():
-    roomDataTopicHandler = KafkaHandler.RoomDataTopicHandler()
-
-    while True:
-        # receive data 
-        roomData : RoomData = roomDataTopicHandler.consume()
-        # decrypt data 
-        image : bytearray = crypto.decrypt(roomData.image)
-        image_topics = topic_modeling.runImageModel(image)
-        image_topics = topic_modeling.updatePercentage(roomData.qrcodeID, image_topics)
-        # TODO : resolve calculation of percetange in model with image topics
-
-def serviceStarter():
-    p1 = Process(target=runAnalysisOnMessages)
-    p1.start()
-    p2 = Process(target=runAnalysisOnBlacklist)
-    p2.start()
-    p3 = Process(target=runAnalysisOnRoom)
-    p3.start()
-
-    p1.join()
-    p2.join()
-    p3.join()
-
-
-def dataDumper():
+def messageAnalyzer():
     messageTopicHandler = KafkaHandler.MessageTopicHandler()
     messageOutputHandler = KafkaHandler.MessageOutputsTopicHandler()
     dbHandler = DBHandler()
-    mongoDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
+    messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
+    entityRoomDBHandler: EntityRoomDBHandler = dbHandler.getEntityRoomDBHandler() 
+    entityUserDBHandler: EntityUserDBHandler = dbHandler.getEntityUserDBHandler()
+    counter : Counter = Counter()
 
-    counter = 0
     while True:
         msgData : MessageData = messageTopicHandler.consume()
-        print("temp")
+        print("Message analyzer - waiting for data")
         #messageTopicHandler.commit()
 
         if msgData:
-            counter+=1
             print("input: ", msgData.__dict__)
+            counter.inc_counter(msgData.roomID, msgData.qrcodeID)
 
-            if mongoDBHandler.readMessagesDataForRoom([msgData.roomID, msgData.qrcodeID]):
-                mongoDBHandler.updateMessagesData([msgData.roomID, msgData.qrcodeID], msgData.data)
+            # save incoming data into MongoDB
+            if messagesDBHandler.readMessagesDataForRoom([msgData.roomID, msgData.qrcodeID]):
+                messagesDBHandler.updateMessagesData([msgData.roomID, msgData.qrcodeID], msgData.data)
             else:
-                mongoDBHandler.insertMessageData(msgData)
-            #output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "HATE")
-            #print("produce :", output.__dict__)
-            #messageOutputHandler.produce(output)
-                
-        if counter == 10:
-            #messageTopicHandler.commit()
-            allData = mongoDBHandler.getCollection('topic-model-messages')
-            print("all data", allData)
-            data = mongoDBHandler.readMessagesDataForRoom([msgData.roomID, msgData.qrcodeID])
-            print("Data from MongoDB", data)
-            counter = 0
+                messagesDBHandler.insertMessageData(msgData)
+            
+            # check hate speech, notify app server, save user data 
+            if hatespeechChecker.checkHate(msgData.data):
+                entityUserDBHandler.updateHateSpeech(msgData.userID, True)
+                output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "HATE")
+                print("produce :", output.__dict__)
+                messageOutputHandler.produce(output)
 
-def BLROOMDumper():
+
+            # check spam, notify app server, save user data
+            if spamChecker.checkSpam(msgData.data):
+                entityUserDBHandler.updateSpamming(msgData.userID, True)
+                output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "SPAM")
+                print("produce :", output.__dict__)
+                messageOutputHandler.produce(output)
+
+
+            if counter.get_counter(msgData.roomID, msgData.qrcodeID) == 10:
+                print("update entity room model for: ", msgData.roomID, msgData.qrcodeID)
+                counter.set_counter(msgData.roomID, msgData.qrcodeID)
+
+                messagesDBHandler.readMessagesDataForRoom([msgData.roomID, msgData.qrcodeID])
+                # #messageTopicHandler.commit()
+                # allData = messagesDBHandler.getCollection('topic-model-messages')
+                # print("all data", allData)
+                messagesInRoom = messagesDBHandler.readMessagesDataForRoom([msgData.roomID, msgData.qrcodeID])
+                #print("Data from MongoDB", messagesInRoom)
+                messages: List[str] = messagesInRoom['data']
+                messages, ner_labels = text_Preprocessing.process(messages)
+                # list of (int, list of (str, float))
+                model_topics = topic_modeling.runModel(messages)
+                model_topics : Dict[int, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
+                model_topics = json.dumps(model_topics)
+               # print(model_topics)
+               # model_topics = encrypt.encrypt(model_topics)
+               # ner_labels = encrypt.encrypt(ner_labels)
+                if entityRoomDBHandler.checkEntityRoom([msgData.roomID, msgData.qrcodeID]):
+                   entityRoomDBHandler.updateTopics([msgData.roomID, msgData.qrcodeID], model_topics)
+                else:
+                   roomEntity : RoomEntity = RoomEntity(msgData.roomID, msgData.qrcodeID, model_topics)
+                   entityRoomDBHandler.insertEntityRoom(roomEntity)
+
+
+def BlRoomAnalyzer():
     roomDataHandler = KafkaHandler.RoomDataAndBlacklistTopicHandler()
     dbHandler = DBHandler()
     blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
     roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
+    entityUserDBHandler : UserEntity = dbHandler.getEntityUserDBHandler()
 
     while True:
         data : KafkaDeserializerObject = roomDataHandler.consume()
-        print("temp Room")
+        print("Blacklist and Room analyzer - waiting for data")
 
         if data:
             if isinstance(data, RoomData):
@@ -145,11 +104,10 @@ def BLROOMDumper():
 
 
 if __name__ == "__main__":
-    #serviceStarter()
-    p1 = Process(target=BLROOMDumper)
-    p1.start()
-    p2 = Process(target=dataDumper)
+    #p1 = Process(target=BlRoomAnalyzer)
+    #p1.start()
+    p2 = Process(target=messageAnalyzer)
     p2.start()
 
-    p1.join()
+    #p1.join()
     p2.join()

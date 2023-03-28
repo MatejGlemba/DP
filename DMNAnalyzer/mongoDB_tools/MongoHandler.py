@@ -1,9 +1,12 @@
+from typing import List, Tuple
 from pymongo import MongoClient
 from pymongo.collection import Collection
-
 from kafka_tools.deserializers import MessageData, RoomData, BlacklistData
+from mongoDB_tools.EntityModels import RoomEntity, UserEntity
 
-analyzerDB = 'analyzerDB'
+
+analyzerDBInputs = 'analyzerDB-inputs'
+analyzerDBOutputs = 'analyzerDB-outputs'
 
 messagesCollectionKeys = ['roomID', 'qrcodeID']
 roomCollectionKeys = ['qrcodeID']
@@ -13,19 +16,29 @@ topicModelMessages = 'topic-model-messages'
 topicModelRoom = 'topic-model-room'
 topicModelUser = 'topic-model-user'
 
+entityModelRoom = 'entity-model-room'
+entityModelUser = 'entity-model-user'
+
 class DBHandler:
     def __init__(self) -> None:
         self.__dbHandler = MongoClient("mongodb://root:rootpassword@localhost:27017/")
-        self.__db = self.__dbHandler[analyzerDB]
-    
+        self.__dbInputs = self.__dbHandler[analyzerDBInputs]
+        self.__dbOutputs = self.__dbHandler[analyzerDBOutputs]
+
     def getBlackListDBHandler(self):
-        return BlacklistDBHandler(collection=self.__db[topicModelUser])
+        return BlacklistDBHandler(collection=self.__dbInputs[topicModelUser])
     
     def getRoomDBHandler(self):
-        return BlacklistDBHandler(collection=self.__db[topicModelRoom])
+        return BlacklistDBHandler(collection=self.__dbInputs[topicModelRoom])
     
     def getMessagesDBHandler(self):
-        return MessagesDBHandler(collection=self.__db[topicModelMessages])
+        return MessagesDBHandler(collection=self.__dbInputs[topicModelMessages])
+    
+    def getEntityRoomDBHandler(self):
+        return EntityRoomDBHandler(collection=self.__dbOutputs[entityModelRoom])
+    
+    def getEntityUserDBHandler(self):
+        return EntityUserDBHandler(collection=self.__dbOutputs[entityModelUser])
 
 class BlacklistDBHandler:
     def __init__(self, collection: Collection) -> None:
@@ -89,50 +102,31 @@ class MessagesDBHandler:
     def readMessagesDataForRoom(self, key_values):
         return self.__collection.find_one({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]})
 
-# def update_data(collection, roomID, qrcodeID, newData):
-#     collection.find_one_and_update({'roomID': roomID, 'qrcodeID': qrcodeID}, {'$push': {'data': newData}})
+class EntityRoomDBHandler:
+    def __init__(self, collection: Collection) -> None:
+        self.__collection = collection
 
-def remove():
-    client = MongoClient("mongodb://root:rootpassword@localhost:27017/")
-    db = client[analyzerDB]
-    collection = db[topicModelMessages]
-    collection.drop()
-    collection = db[topicModelRoom]
-    collection.drop()
-    collection = db[topicModelUser]
-    collection.drop()
-#def remove():
-#     client = MongoClient("mongodb://root:rootpassword@localhost:27017/")
-#     db = client['testDB']
-#     collection = db['collectionDB']
-#     collection.delete_one({'roomID': 1})
-#     s = collection.find_one({'roomID' : 1})
-#     print("after delete", s)
+    def checkEntityRoom(self, key_values: List[str]):
+        return self.__collection.find_one({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]})
+    
+    def insertEntityRoom(self, data: RoomEntity):
+        self.__collection.insert_one(data.__dict__)
 
-def db_client():
-    client = MongoClient("mongodb://root:rootpassword@localhost:27017/")
-    db = client[analyzerDB]
-    collection = db[topicModelMessages]
-    #docs = []
-    #doc = []
-    #doc.append("mongodb asdfkh asdkfjh askdfha")
-    #docs.append(doc)
-    #doc = []
-    #doc.append("mongodb asdf asvbcdkfjh asksddfha")
-    #docs.append(doc)
-    #record = {
-    #    "roomID" : 1, 
-    #    "qrcodeID" : 3, 
-    #    "data" : docs
-    #}
-    #rec = collection.insert_one(record)
-    print(collection)
-    ss = list(collection.find({}))
-    for s in ss:
-        print("update", s)
-    #newData = ["sadf asdlfkjg sdg"]
-    #update_data(collection, 1, 3, newData)
-    #s = collection.find_one({'roomID' : 1})
-    #print("after update", s )
-db_client()
-remove()
+    def updateTopics(self, key_values: List[str], topics: List):
+        self.__collection.find_one_and_update({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]}, {'$set' : {'topics' : topics}})
+ 
+class EntityUserDBHandler:
+    def __init__(self, collection: Collection) -> None:
+        self.__collection = collection
+
+    def insertEntityUser(self, data: UserEntity):
+        self.__collection.insert_one(data.__dict__)
+
+    def updateTopics(self, key_value: str, topics: List):
+        self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, {'$push' : {'topics' : topics}})
+
+    def updateHateSpeech(self, key_value: str, hate: bool):
+        self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, { "$set": { "hateSpeech": hate}})
+ 
+    def updateSpamming(self, key_value: str, spam: bool):
+        self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, { "$set": { "spamming": spam}})
