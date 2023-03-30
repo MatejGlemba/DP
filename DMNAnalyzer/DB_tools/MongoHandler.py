@@ -2,7 +2,7 @@ from typing import List, Tuple
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from kafka_tools.deserializers import MessageData, RoomData, BlacklistData
-from mongoDB_tools.EntityModels import RoomEntity, UserEntity
+from DB_tools.EntityModels import RoomEntity, UserEntity
 
 
 analyzerDBInputs = 'analyzerDB-inputs'
