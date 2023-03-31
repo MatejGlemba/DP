@@ -6,15 +6,17 @@ from kafka_tools.deserializers import KafkaDeserializerObject, MessageData, Blac
 from utils.crypto import Crypto
 from utils.messagesCounter import Counter
 from ai_tools import hatespeechChecker, spamChecker, text_Preprocessing, topic_modeling
-from mongoDB_tools.MongoHandler import DBHandler, MessagesDBHandler, RoomDBHandler, BlacklistDBHandler, EntityRoomDBHandler, EntityUserDBHandler
-from mongoDB_tools.EntityModels import RoomEntity, UserEntity
+from DB_tools.MongoHandler import DBHandler, MessagesDBHandler, RoomDBHandler, BlacklistDBHandler
+from DB_tools.InfluxDBHandler import EntityRoomDBHandler, EntityUserDBHandler, InfluxDBHandler
+from DB_tools.EntityModels import RoomEntity, UserEntity
 
 def messageAnalyzer():
     messageTopicHandler = KafkaHandler.MessageTopicHandler()
     messageOutputHandler = KafkaHandler.MessageOutputsTopicHandler()
     dbHandler = DBHandler()
+    influxDBHandler = InfluxDBHandler()
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
-    entityRoomDBHandler: EntityRoomDBHandler = dbHandler.getEntityRoomDBHandler() 
+    entityRoomDBHandler: EntityRoomDBHandler = influxDBHandler.getEntityRoomDBHandler() 
     entityUserDBHandler: EntityUserDBHandler = dbHandler.getEntityUserDBHandler()
     counter : Counter = Counter()
 
@@ -64,15 +66,16 @@ def messageAnalyzer():
                 # list of (int, list of (str, float))
                 model_topics = topic_modeling.runModel(messages)
                 model_topics : Dict[int, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
-                model_topics = json.dumps(model_topics)
+               # model_topics = json.dumps(model_topics)
                # print(model_topics)
                # model_topics = encrypt.encrypt(model_topics)
                # ner_labels = encrypt.encrypt(ner_labels)
-                if entityRoomDBHandler.checkEntityRoom([msgData.roomID, msgData.qrcodeID]):
-                   entityRoomDBHandler.updateTopics([msgData.roomID, msgData.qrcodeID], model_topics)
-                else:
-                   roomEntity : RoomEntity = RoomEntity(msgData.roomID, msgData.qrcodeID, model_topics)
-                   entityRoomDBHandler.insertEntityRoom(roomEntity)
+
+                #if entityRoomDBHandler.checkEntityRoom([msgData.roomID, msgData.qrcodeID]):
+                entityRoomDBHandler.updateTopics(msgData.roomID, msgData.qrcodeID, model_topics)
+                #else:
+                #   roomEntity : RoomEntity = RoomEntity(msgData.roomID, msgData.qrcodeID, model_topics)
+                #   entityRoomDBHandler.insertEntityRoom(roomEntity)
 
 
 def BlRoomAnalyzer():

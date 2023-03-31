@@ -1,131 +1,84 @@
-from typing import List, Tuple
-from pymongo import MongoClient
+from typing import Dict, List, Tuple
 from pymongo.collection import Collection
-from kafka_tools.deserializers import MessageData, RoomData, BlacklistData
-from DB_tools.EntityModels import RoomEntity, UserEntity
 from influxdb_client import InfluxDBClient, Point
-from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
+from influxdb_client.client.write_api import ASYNCHRONOUS
 
-messagesCollectionKeys = ['roomID', 'qrcodeID']
-roomCollectionKeys = ['qrcodeID']
+messagesCollectionKeys = ['roomID', 'qrcodeID', 'topicNum']
 blacklistCollectionKeys = ['userID']
-
-topicModelMessages = 'topic-model-messages'
-topicModelRoom = 'topic-model-room'
-topicModelUser = 'topic-model-user'
 
 entityModelRoom = 'entity-model-room'
 entityModelUser = 'entity-model-user'
 
-class DBHandler:
-    def __init__(self) -> None:
-        self.__dbHandlerInputs = InfluxDBClient(url="http://localhost:8086", token='K3O8XkemqLaTIUEUZPc0ZgyMGtesu9GE4UDGUwQKK5oyOCplNAZ8fHBjpUIwFusTfNOoglKeqm43yAbFqLXZ8w==', org="dmn")
-        self.__dbHandlerOutputs = InfluxDBClient(url="http://localhost:8086", token='K3O8XkemqLaTIUEUZPc0ZgyMGtesu9GE4UDGUwQKK5oyOCplNAZ8fHBjpUIwFusTfNOoglKeqm43yAbFqLXZ8w==', org="dmn")
-        self.__dbInputs = self.__dbHandlerInputs.write_api(write_options=ASYNCHRONOUS)
-        self.__dbOutputs = self.__dbHandlerOutputs.write_api(write_options=ASYNCHRONOUS)
+organization="dmn"
+bucket = "topics"
+token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q=="
+url="http://localhost:8086"
 
-    def getBlackListDBHandler(self):
-        return BlacklistDBHandler()
-    
-    def getRoomDBHandler(self):
-        return BlacklistDBHandler()
-    
-    def getMessagesDBHandler(self):
-        return MessagesDBHandler(measurement=topicModelMessages)
-    
+class InfluxDBHandler:
+
     def getEntityRoomDBHandler(self):
-        return EntityRoomDBHandler()
+        return EntityRoomDBHandler(measurement=entityModelRoom)
     
     def getEntityUserDBHandler(self):
-        return EntityUserDBHandler()
-
-class BlacklistDBHandler:
-    def __init__(self, collection: Collection) -> None:
-        self.__collection = collection
-
-    def getCollection(self):
-        return self.__collection
-
-    # update data for specific room identified by qrcodeID(App)
-    def updateBlacklistData(self, key_value: str, newData: BlacklistData):
-        self.__collection.replace_one({blacklistCollectionKeys[0]: key_value}, newData.__dict__)
-        
-    # first data insert for specific room identified by qrcodeID(App)
-    def insertBlacklistData(self, roomData: BlacklistData):
-        self.__collection.insert_one(roomData.__dict__)
-
-    # find data for specific room identified by qrcodeID(App) -> just for check
-    def readBlacklistData(self, key_value: str):
-        return self.__collection.find_one({blacklistCollectionKeys[0]: key_value}) 
+        return EntityUserDBHandler(measurement=entityModelRoom)
     
-class RoomDBHandler:
-    def __init__(self, collection: Collection) -> None:
-        self.__collection = collection
-
-    def getCollection(self):
-        return self.__collection
-
-    # update data for specific room identified by qrcodeID(App)
-    def updateRoomData(self, key_value: str, newData: RoomData):
-        self.__collection.replace_one({roomCollectionKeys[0]: key_value}, newData.__dict__)
-        
-    # first data insert for specific room identified by qrcodeID(App)
-    def insertRoomData(self, roomData: RoomData):
-        self.__collection.insert_one(roomData.__dict__)
-
-    # find data for specific room identified by qrcodeID(App) -> just for check
-    def readRoomData(self, key_value: str):
-        return self.__collection.find_one({roomCollectionKeys[0]: key_value})
-    
-class MessagesDBHandler:
+class EntityRoomDBHandler:
     def __init__(self, measurement: str) -> None:
         self.__measurement = measurement
 
-    def getCollection(self):
-        return self.__collection
+    def updateTopics(self, roomID: str, qrcodeID: str, topics: Dict[int, List[Tuple[float, str]]]):
+        client = InfluxDBClient(url=url, token=token, org=organization) 
+        # read - check if exists
+        queryAPI = client.query_api()
+        query = f'from(bucket:"{bucket}")\
+            |> range(start: -inf)\
+            |> filter(fn:(r) => r._measurement == "{self.__measurement}")\
+            |> filter(fn:(r) => r.roomID == "{roomID}")\
+            |> filter(fn:(r) => r.qrcodeID == "{qrcodeID}")'
+            
+        results : List[Dict] = []
+        result = queryAPI.query(query)
+        for table in result:
+            for record in table.records:
+                results.append(record.values)
 
-    # update messages for specific room identified by roomID(Matrix) + qrcodeID(App) -> messages are represented as a list, where new stuff is just appending
-    def updateMessagesData(self, key_values, value):
-        self.__collection.find_one_and_update({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]}, {'$push' : {'data' : value}})
+        # if exists delete
+        if results:
+            deleteAPI = client.delete_api()
+            for result in results:
+                start = result['_start']
+                stop = result['_stop']
+
+            predicate = f'_measurement=\"{self.__measurement}\" and roomID=\"{roomID}\" and qrcodeID=\"{qrcodeID}\"'
+            deleteAPI.delete(start=start, stop=stop, predicate=predicate, bucket=bucket, org=organization)
+            results = []
+
+        # insert new one
+        for topicNum, topicList in topics.items():
+            point = Point(self.__measurement).tag(messagesCollectionKeys[0], roomID).tag(messagesCollectionKeys[1], qrcodeID)
+            point.tag(messagesCollectionKeys[2], topicNum)
         
-    # first insert of data for specific room identified by roomID(Matrix) + qrcodeID(App) -> messages are represented as a list
-    def insertMessageData(self, msgData: MessageData):
-        newRecord = {
-            "measurement" : msgData.roomID, 
-            "qrcodeID" : msgData.qrcodeID, 
-            "data" : [msgData.data]
-        }
-        self.__collection.insert_one(newRecord)
+            for weight, word in topicList:
+                point.field(word, weight)
 
-    # find messages for specific room identified by roomID(Matrix) + qrcodeID(App) -> just for check
-    def readMessagesDataForRoom(self, key_values):
-        return self.__collection.find_one({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]})
+            writeAPI = client.write_api(write_options=ASYNCHRONOUS)
+            writeAPI.write(bucket=bucket, record=point)
+        
+        # close
+        client.close()
 
-class EntityRoomDBHandler:
-    def __init__(self, collection: Collection) -> None:
-        self.__collection = collection
-
-    def checkEntityRoom(self, key_values: List[str]):
-        return self.__collection.find_one({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]})
-    
-    def insertEntityRoom(self, data: RoomEntity):
-        self.__collection.insert_one(data.__dict__)
-
-    def updateTopics(self, key_values: List[str], topics: List):
-        self.__collection.find_one_and_update({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]}, {'$set' : {'topics' : topics}})
- 
 class EntityUserDBHandler:
-    def __init__(self, collection: Collection) -> None:
-        self.__collection = collection
-
-    def insertEntityUser(self, data: UserEntity):
-        self.__collection.insert_one(data.__dict__)
+    def __init__(self, measurement: str) -> None:
+        self.__measurement = measurement
 
     def updateTopics(self, key_value: str, topics: List):
-        self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, {'$push' : {'topics' : topics}})
+        pass
+        #self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, {'$push' : {'topics' : topics}})
 
     def updateHateSpeech(self, key_value: str, hate: bool):
-        self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, { "$set": { "hateSpeech": hate}})
+        pass
+        #self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, { "$set": { "hateSpeech": hate}})
  
     def updateSpamming(self, key_value: str, spam: bool):
-        self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, { "$set": { "spamming": spam}})
+        pass
+        #self.__collection.find_one_and_update({blacklistCollectionKeys[0]: key_value}, { "$set": { "spamming": spam}})

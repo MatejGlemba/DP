@@ -29,13 +29,13 @@ class DBHandler:
         return BlacklistDBHandler(collection=self.__dbInputs[topicModelUser])
     
     def getRoomDBHandler(self):
-        return BlacklistDBHandler(collection=self.__dbInputs[topicModelRoom])
+        return RoomDBHandler(collection=self.__dbInputs[topicModelRoom])
     
     def getMessagesDBHandler(self):
         return MessagesDBHandler(collection=self.__dbInputs[topicModelMessages])
     
-    def getEntityRoomDBHandler(self):
-        return EntityRoomDBHandler(collection=self.__dbOutputs[entityModelRoom])
+    # def getEntityRoomDBHandler(self):
+    #     return EntityRoomDBHandler(collection=self.__dbOutputs[entityModelRoom])
     
     def getEntityUserDBHandler(self):
         return EntityUserDBHandler(collection=self.__dbOutputs[entityModelUser])
@@ -102,18 +102,18 @@ class MessagesDBHandler:
     def readMessagesDataForRoom(self, key_values):
         return self.__collection.find_one({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]})
 
-class EntityRoomDBHandler:
-    def __init__(self, collection: Collection) -> None:
-        self.__collection = collection
+# class EntityRoomDBHandler:
+#     def __init__(self, collection: Collection) -> None:
+#         self.__collection = collection
 
-    def checkEntityRoom(self, key_values: List[str]):
-        return self.__collection.find_one({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]})
+#     def checkEntityRoom(self, key_values: List[str]):
+#         return self.__collection.find_one({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]})
     
-    def insertEntityRoom(self, data: RoomEntity):
-        self.__collection.insert_one(data.__dict__)
+#     def insertEntityRoom(self, data: RoomEntity):
+#         self.__collection.insert_one(data.__dict__)
 
-    def updateTopics(self, key_values: List[str], topics: List):
-        self.__collection.find_one_and_update({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]}, {'$set' : {'topics' : topics}})
+#     def updateTopics(self, key_values: List[str], topics: List):
+#         self.__collection.find_one_and_update({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]}, {'$set' : {'topics' : topics}})
  
 class EntityUserDBHandler:
     def __init__(self, collection: Collection) -> None:

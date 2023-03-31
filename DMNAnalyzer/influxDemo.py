@@ -33,7 +33,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 def insertData():
     # Set up the InfluxDB client
-    client = InfluxDBClient(url="http://localhost:8086", token="K3O8XkemqLaTIUEUZPc0ZgyMGtesu9GE4UDGUwQKK5oyOCplNAZ8fHBjpUIwFusTfNOoglKeqm43yAbFqLXZ8w==", org="dmn")
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
 
     # Define the data to insert
     room_id = 'room123'
@@ -94,7 +94,7 @@ def insertData():
 
 
 def insert():
-    client = InfluxDBClient(url="http://localhost:8086", token="K3O8XkemqLaTIUEUZPc0ZgyMGtesu9GE4UDGUwQKK5oyOCplNAZ8fHBjpUIwFusTfNOoglKeqm43yAbFqLXZ8w==", org="dmn")
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
      # Define the data to insert
     room_id = 'room444'
     qrcode_id = 'qrcode476'
@@ -115,7 +115,7 @@ def insert():
     client.close()
     
 def readData():
-    client = InfluxDBClient(url="http://localhost:8086", token="K3O8XkemqLaTIUEUZPc0ZgyMGtesu9GE4UDGUwQKK5oyOCplNAZ8fHBjpUIwFusTfNOoglKeqm43yAbFqLXZ8w==", org="dmn")
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
     # Define the data to insert
     room_id = 'room444'
     qrcode_id = 'qrcode476'
@@ -123,33 +123,75 @@ def readData():
 
     # Define the measurement name
     measurement_name = 'topic-model-room'
-    query = f'from(bucket:\"dmnOutputs\") |> range(start: -inf) |> filter(fn: (r) => r.roomID == \"{room_id}\" and r.qrcodeID == \"{qrcode_id}\")'
-    s = client.query_api().query(query)
-    d = s.to_json()
-    print(d)
+    #query = f'from(bucket:\"dmnOutputs\") |> range(start: -inf) |> filter(fn: (r) => r.roomID == \"{room_id}\" and r.qrcodeID == \"{qrcode_id}\")'
+    
+    
+    query = 'from(bucket:"topics")\
+|> range(start: -inf)\
+|> filter(fn:(r) => r._measurement == "topic-model-room")'
+    
+    results = []
+    result = client.query_api().query(query)
+    for table in result:
+        for record in table.records:
+            #print(record.values)
+            #print(record.get_start())
+            #print(record.get_stop())
+            results.append(record.values)
+
+    print(results)
+
 
 def deleteData():
-    room_id = 'room123'
-    qrcode_id = 'qrcode456'
-    client = InfluxDBClient(url="http://localhost:8086", token="K3O8XkemqLaTIUEUZPc0ZgyMGtesu9GE4UDGUwQKK5oyOCplNAZ8fHBjpUIwFusTfNOoglKeqm43yAbFqLXZ8w==", org="dmn")
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
    
+    query = 'from(bucket:"dmnOutputs")\
+    |> range(start: -inf)\
+    |> filter(fn:(r) => r._measurement == "topic-model-room")\
+    |> filter(fn:(r) => r.roomID == "room444")\
+    |> filter(fn:(r) => r.qrcodeID == "qrcode476")'
+    
+    results = {}
+    result = client.query_api().query(query)
+    for table in result:
+        for record in table.records:
+            results = record.values
+
     delete_api = client.delete_api()
 
     """
     Delete Data
     """
-    start = "1730-12-19T21:51:54.998196+00:00"
-    stop = datetime.now()
-    predicate = f'_measurement="topic-model-room"'
+    start = results['_start']
+    stop = results['_stop']
+    measurement = results['_measurement']
+    qrcodeID = results['qrcodeID']
+    roomID = results['roomID']
+
+    predicate = f'_measurement=\"{measurement}\" and roomID=\"{roomID}\" and qrcodeID=\"{qrcodeID}\"'
+    print(predicate)
+    print("start", start)
+    print("stop", stop)
     s  = delete_api.delete(start=start, stop=stop, predicate=predicate, bucket='dmnOutputs', org='dmn')
     print(s)
     """
     Close client
     """
     client.close()
-
+ 
+def bucketApi():
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
+    b = client.buckets_api()
+    b.delete_bucket(bucket="topic-model-room")
+    s = b.find_buckets()
+    print(s)
 #insertData()
 
-deleteData()
+
+#insert()
+#readData()
+#deleteData()
+#readData()
 #insert()
 readData()
+#bucketApi()
