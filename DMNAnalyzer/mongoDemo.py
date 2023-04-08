@@ -59,4 +59,4 @@ def db_client():
     #print("after update", s )
 
 db_client()
-#remove()
+remove()

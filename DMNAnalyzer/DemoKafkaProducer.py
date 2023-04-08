@@ -89,9 +89,9 @@ def roomBlinput():
 
 if __name__ == "__main__":
     #serviceStarter()
-    #p1 = Process(target=roomBlinput)
-    #p1.start()
-    p2 = Process(target=messageInput)
+    p1 = Process(target=roomBlinput)
+    p1.start()
+    p2 = Process(target=blacklistInput)
     p2.start()
-    #p1.join()
+    p1.join()
     p2.join()

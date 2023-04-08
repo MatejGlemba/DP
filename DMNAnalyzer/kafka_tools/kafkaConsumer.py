@@ -17,9 +17,9 @@ class KafkaConsumer:
 
     def consume(self, dataClass=deserializers.KafkaDeserializerObject) -> Message:
         msg = self.__consumer.poll(timeout=self.__poll_timeout)
-        #print(msg)
         if msg:
             msg = msg.value()
+            print(msg)
             return deserializers.deserialize(jsonValue=msg, dataClass=dataClass)
     
     def commit(self):

@@ -28,6 +28,7 @@
 # client.write_points([data_point])
 
 from datetime import datetime
+from typing import Dict, List
 from influxdb_client import InfluxDBClient, Point, WriteOptions, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
@@ -114,6 +115,33 @@ def insert():
     write_api.write(bucket="dmnOutputs", record=point)
     client.close()
     
+def insertUser():
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
+     # Define the data to insert
+    userID = 'abc'
+    word_weights = {'halohalo': 0.2}
+
+    # Define the measurement name
+    measurement_name = 'topic-model-user'
+
+
+    # Create a data point
+    point = Point(measurement_name).tag('userID', userID)
+    for word, weight in word_weights.items():
+        point.field(word, weight)
+    point.time(datetime(2020, 1, 1), WritePrecision.S)
+    # Write the data point to InfluxDB
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+    write_api.write(bucket="topics", record=point)
+    point = Point(measurement_name).tag('userID', userID)
+    point.field('hateSpeech', 0)
+    write_api.write(bucket="topics", record=point)
+    point = Point(measurement_name).tag('userID', userID)
+    point.field('spamming', 1)
+    write_api.write(bucket="topics", record=point)
+
+    client.close()
+
 def readData():
     client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
     # Define the data to insert
@@ -141,6 +169,31 @@ def readData():
 
     print(results)
 
+def readUser():
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
+    # Define the data to insert
+    userID = 'abc'
+
+    # Define the measurement name
+    measurement_name = 'topic-model-user'
+    #query = f'from(bucket:\"dmnOutputs\") |> range(start: -inf) |> filter(fn: (r) => r.roomID == \"{room_id}\" and r.qrcodeID == \"{qrcode_id}\")'
+    
+    
+    query = 'from(bucket:"topics")\
+|> range(start: -inf)\
+|> filter(fn:(r) => r._measurement == "topic-model-user")\
+|> filter(fn:(r) => r.userID == "abc")'
+    
+    results = []
+    result = client.query_api().query(query)
+    for table in result:
+        for record in table.records:
+            #print(record.values)
+            #print(record.get_start())
+            #print(record.get_stop())
+            results.append(record.values)
+
+    print(results)
 
 def deleteData():
     client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
@@ -179,13 +232,106 @@ def deleteData():
     """
     client.close()
  
+def deleteUser():
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
+   
+    query = 'from(bucket:"topics")\
+    |> range(start: -inf)\
+    |> filter(fn:(r) => r._measurement == "topic-model-user")\
+    |> filter(fn:(r) => r.userID == "abc")'
+    
+    results = {}
+    result = client.query_api().query(query)
+    for table in result:
+        for record in table.records:
+            results = record.values
+
+    delete_api = client.delete_api()
+
+    """
+    Delete Data
+    """
+    start = results['_start']
+    stop = results['_stop']
+    measurement = results['_measurement']
+    userID = results['userID']
+
+    predicate = f'_measurement=\"{measurement}\" and userID=\"{userID}\"'
+    print(predicate)
+    print("start", start)
+    print("stop", stop)
+    s  = delete_api.delete(start=start, stop=stop, predicate=predicate, bucket='topics', org='dmn')
+    print(s)
+    """
+    Close client
+    """
+    client.close()
+
 def bucketApi():
     client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
     b = client.buckets_api()
     b.delete_bucket(bucket="topic-model-room")
     s = b.find_buckets()
     print(s)
-#insertData()
+
+
+
+def userDemo():
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
+    bucket = "topics"
+    userID = 'abc'
+    measurement = 'topic-model-user'
+    # read - check if exists
+    queryAPI = client.query_api()
+    query = f'from(bucket:"{bucket}")\
+        |> range(start: -inf)\
+        |> filter(fn:(r) => r._measurement == "{measurement}")\
+        |> filter(fn:(r) => r.userID == "{userID}")'
+        
+    results : List[Dict] = []
+    result = queryAPI.query(query)
+    for table in result:
+        for record in table.records:
+            results.append(record.values)
+    print("records", results)
+    # if exists delete
+    if results:
+        deleteAPI = client.delete_api()
+        for result in results:
+            if 'hateSpeech' == result['_field']:
+                hateSpeech = result['_value']
+            if 'spamming' == result['_field']:
+                spamming = result['_value']
+            start = result['_start']
+            stop = result['_stop']
+        print("start",start)
+        print("stop",stop)
+        print("hate", hateSpeech)
+        print("spam", spamming)
+        predicate = f'_measurement=\"{measurement}\" and userID=\"{userID}\"'
+        deleteAPI.delete(start=start, stop=stop, predicate=predicate, bucket=bucket, org='dmn')
+        results = []
+
+    # insert new topics with original flags
+    topics = {'halohalo': 0.8}
+    writeAPI = client.write_api(write_options=SYNCHRONOUS)
+    #for topicNum, topicList in topics.items():
+    point = Point(measurement).tag('userID', userID)
+    #point.tag(messagesCollectionKeys[1], topicNum)
+
+    for word, weight in topics.items():
+        point.field(word, weight)
+    print(hateSpeech)
+    print(type(hateSpeech))
+    point.field("hateSpeech", hateSpeech)
+    point.field("spamming", spamming)
+
+    print(point.__dict__)
+    writeAPI.write(bucket=bucket, record=point)    
+
+    # close
+    client.close()
+# insertData()
 
 
 #insert()
@@ -193,5 +339,12 @@ def bucketApi():
 #deleteData()
 #readData()
 #insert()
-readData()
+#readData()
 #bucketApi()
+
+#insertUser()
+#readUser()
+#userDemo()
+#readUser()
+
+deleteUser()

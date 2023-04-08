@@ -24,8 +24,8 @@ def vis(num_topics, corpus, id2word, lda_model):
 
     pyLDAvis.save_html(LDAvis_prepared, './results/ldavis_prepared_'+ str(num_topics) +'.html')
 
-def train(corpus, id2word):
-    num_topics = 10
+def train(corpus, id2word, num_topics):
+    #num_topics = 10
 
     # Build LDA model
     lda_model = gensim.models.LdaMulticore(corpus=corpus, id2word=id2word,num_topics=num_topics)
@@ -35,12 +35,12 @@ def train(corpus, id2word):
     #vis(num_topics, corpus, id2word, lda_model)
     return lda_model.print_topics()
 
-def runModel(data_words):    
+def runModel(data_words, num_topics=10):    
     id2word = corpora.Dictionary(data_words)
     texts = data_words
     corpus = [id2word.doc2bow(text) for text in texts]
     #print(corpus[:1][0][:30])
-    return train(corpus, id2word)
+    return train(corpus, id2word, num_topics)
 
 
 def updatePercentageOnWord(weight : float, word: str, ner_labels :  List[Tuple[str, str]]) -> float:

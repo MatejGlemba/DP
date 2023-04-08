@@ -6,7 +6,7 @@ from kafka_tools.deserializers import KafkaDeserializerObject, MessageData, Blac
 from utils.crypto import Crypto
 from utils.messagesCounter import Counter
 from ai_tools import hatespeechChecker, spamChecker, text_Preprocessing, topic_modeling
-from DB_tools.MongoHandler import DBHandler, MessagesDBHandler, RoomDBHandler, BlacklistDBHandler
+from DB_tools.MongoHandler import DBHandler, MessagesDBHandler, RoomDBHandler, BlacklistDBHandler#, EntityRoomDBHandler, EntityUserDBHandler
 from DB_tools.InfluxDBHandler import EntityRoomDBHandler, EntityUserDBHandler, InfluxDBHandler
 from DB_tools.EntityModels import RoomEntity, UserEntity
 
@@ -40,7 +40,7 @@ def messageAnalyzer():
                 entityUserDBHandler.updateHateSpeech(msgData.userID, True)
                 output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "HATE")
                 print("produce :", output.__dict__)
-                messageOutputHandler.produce(output)
+                #messageOutputHandler.produce(output)
 
 
             # check spam, notify app server, save user data
@@ -48,14 +48,14 @@ def messageAnalyzer():
                 entityUserDBHandler.updateSpamming(msgData.userID, True)
                 output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "SPAM")
                 print("produce :", output.__dict__)
-                messageOutputHandler.produce(output)
+                #messageOutputHandler.produce(output)
 
 
             if counter.get_counter(msgData.roomID, msgData.qrcodeID) == 10:
                 print("update entity room model for: ", msgData.roomID, msgData.qrcodeID)
                 counter.set_counter(msgData.roomID, msgData.qrcodeID)
 
-                messagesDBHandler.readMessagesDataForRoom([msgData.roomID, msgData.qrcodeID])
+                #messagesDBHandler.readMessagesDataForRoom([msgData.roomID, msgData.qrcodeID])
                 # #messageTopicHandler.commit()
                 # allData = messagesDBHandler.getCollection('topic-model-messages')
                 # print("all data", allData)
@@ -64,8 +64,8 @@ def messageAnalyzer():
                 messages: List[str] = messagesInRoom['data']
                 messages, ner_labels = text_Preprocessing.process(messages)
                 # list of (int, list of (str, float))
-                model_topics = topic_modeling.runModel(messages)
-                model_topics : Dict[int, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
+                model_topics = topic_modeling.runModel(messages, 10)
+                model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
                # model_topics = json.dumps(model_topics)
                # print(model_topics)
                # model_topics = encrypt.encrypt(model_topics)
@@ -74,43 +74,55 @@ def messageAnalyzer():
                 #if entityRoomDBHandler.checkEntityRoom([msgData.roomID, msgData.qrcodeID]):
                 entityRoomDBHandler.updateTopics(msgData.roomID, msgData.qrcodeID, model_topics)
                 #else:
-                #   roomEntity : RoomEntity = RoomEntity(msgData.roomID, msgData.qrcodeID, model_topics)
-                #   entityRoomDBHandler.insertEntityRoom(roomEntity)
+                #    roomEntity : RoomEntity = RoomEntity(msgData.roomID, msgData.qrcodeID, model_topics)
+                #    entityRoomDBHandler.insertEntityRoom(roomEntity)
 
 
 def BlRoomAnalyzer():
     roomDataHandler = KafkaHandler.RoomDataAndBlacklistTopicHandler()
     dbHandler = DBHandler()
+    influxDBHandler = InfluxDBHandler()
     blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
     roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
-    entityUserDBHandler : UserEntity = dbHandler.getEntityUserDBHandler()
+    entityUserDBHandler : EntityUserDBHandler = influxDBHandler.getEntityUserDBHandler()
 
     while True:
         data : KafkaDeserializerObject = roomDataHandler.consume()
         print("Blacklist and Room analyzer - waiting for data")
 
         if data:
+            print(type(data))
             if isinstance(data, RoomData):
+                print("roomData")
                 if roomDBHandler.readRoomData(data.qrcodeID):
                     roomDBHandler.updateRoomData(data)
                 else:
                     roomDBHandler.insertRoomData(data)
                 print("input: ", data.__dict__)
             elif isinstance(data, BlacklistData):
+                print("blacklistData")
                 if blacklistDBHandler.readBlacklistData(data.userID):
                     blacklistDBHandler.updateBlacklistData(data)
                 else:
                     blacklistDBHandler.insertBlacklistData(data)
                 print("input: ", data.__dict__)
+
+                blacklistData = blacklistDBHandler.readBlacklistData(data.userID)
+                messages, ner_labels = text_Preprocessing.process(blacklistData['notes'])
+                # list of (int, list of (str, float))
+                model_topics = topic_modeling.runModel(messages, 10)
+                model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
+                entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
             else:
+                print("else")
                 continue
 
 
 if __name__ == "__main__":
-    #p1 = Process(target=BlRoomAnalyzer)
-    #p1.start()
+    p1 = Process(target=BlRoomAnalyzer)
+    p1.start()
     p2 = Process(target=messageAnalyzer)
     p2.start()
 
-    #p1.join()
+    p1.join()
     p2.join()
