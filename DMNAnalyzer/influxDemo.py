@@ -32,67 +32,84 @@ from typing import Dict, List
 from influxdb_client import InfluxDBClient, Point, WriteOptions, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-def insertData():
+def insertDataMultipleMatrixRoomsForQrCodeRoomWithUpdate():
     # Set up the InfluxDB client
-    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
+    organization = 'dmn'
+    bucket = 'topics'
+    measurement = 'temp'
+    qrcodeID = 'qrcode1'
+    roomID = 'room1'
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org=organization)
+   
 
-    # Define the data to insert
-    room_id = 'room123'
-    qrcode_id = 'qrcode456'
-    word_weights = {'hello': 0.5, 'world': 0.3, 'foo': 0.2}
-    # Define the measurement name
-    measurement_name = 'topic-model-messages'
-
-
-    # Create a data point
-
-    point = Point(measurement_name).tag('roomID', room_id).tag('qrcodeID', qrcode_id)
-    for word, weight in word_weights.items():
-        point.field(word, weight)
+    topics = {'0' : [(0.6, 'ha'), (0.2, 'halo'), (0.2, 'ha')],  '1' : [(0.2, 'alo'), (0.3, 'hao'), (0.4, 'haloh')]}
 
 
-    # Write the data point to InfluxDB
-    write_api = client.write_api(write_options=SYNCHRONOUS)
-    write_api.write(bucket="dmn", record=point)
+    # read - check if exists
+    queryAPI = client.query_api()
+    query = f'from(bucket:"{bucket}")\
+        |> range(start: -inf)\
+        |> filter(fn:(r) => r._measurement == "{measurement}")\
+        |> filter(fn:(r) => r.qrcodeID == "{qrcodeID}")\
+        |> group(columns: ["roomID"])'
+        
+    results : List[Dict] = []
+    result = queryAPI.query(query)
+    for table in result:
+        for record in table.records:
+            print(record)
+            results.append(record.values)
+    
 
-    #----------------------------------------------------------------------
-    # Define the data to insert
-    room_id = 'room333'
-    qrcode_id = 'qrcode466'
-    word_weights = {"hello": 0.7, 'world': 0.6, 'foo': 0.2}
+    # # if exists delete
+    # if results:
+    #     deleteAPI = client.delete_api()
+    #     for result in results:
+    #         start = result['_start']
+    #         stop = result['_stop']
 
-    # Define the measurement name
-    measurement_name = 'topic-model-messages'
+    #     predicate = f'_measurement=\"{measurement}\" and qrcodeID=\"{qrcodeID}\"'
+    #     deleteAPI.delete(start=start, stop=stop, predicate=predicate, bucket=bucket, org=organization)
+    #     # results = []
 
-    # Create a data point
+    # insert new one
+    # for topicNum, topicList in topics.items():
+    #     point = Point(measurement).tag('roomID', roomID).tag('qrcodeID', qrcodeID)
+    #     point.tag('topicNum', topicNum)
+    
+    #     for weight, word in topicList:
+    #         point.field(word, weight)
 
-    point = Point(measurement_name).tag('roomID', room_id).tag('qrcodeID', qrcode_id)
-    for word, weight in word_weights.items():
-        point.field(word, weight)
+    #     writeAPI = client.write_api(write_options=SYNCHRONOUS)
+    #     writeAPI.write(bucket=bucket, record=point)
+    
+    # roomID = 'room2'
+    #     # insert new one
+    # for topicNum, topicList in topics.items():
+    #     point = Point(measurement).tag('roomID', roomID).tag('qrcodeID', qrcodeID)
+    #     point.tag('topicNum', topicNum)
+    
+    #     for weight, word in topicList:
+    #         point.field(word, weight)
 
-    # Write the data point to InfluxDB
-    write_api = client.write_api(write_options=SYNCHRONOUS)
-    write_api.write(bucket="dmn", record=point)
+    #     writeAPI = client.write_api(write_options=SYNCHRONOUS)
+    #     writeAPI.write(bucket=bucket, record=point)
+    # roomID = 'room3'
+    #     # insert new one
+    # for topicNum, topicList in topics.items():
+    #     point = Point(measurement).tag('roomID', roomID).tag('qrcodeID', qrcodeID)
+    #     point.tag('topicNum', topicNum)
+    
+    #     for weight, word in topicList:
+    #         point.field(word, weight)
 
-    #----------------------------------------------------------------------
-    # Define the data to insert
-    room_id = 'room444'
-    qrcode_id = 'qrcode476'
-    word_weights = {'halohalo': 0.2}
-
-    # Define the measurement name
-    measurement_name = 'topic-model-room'
+    #     writeAPI = client.write_api(write_options=SYNCHRONOUS)
+    #     writeAPI.write(bucket=bucket, record=point)
+    # close
+    client.close()
 
 
-    # Create a data point
-    point = Point(measurement_name).tag('roomID', room_id).tag('qrcodeID', qrcode_id)
-    for word, weight in word_weights.items():
-        point.field(word, weight)
-    point.time(datetime(2022, 1, 1), WritePrecision.NS)
-    # Write the data point to InfluxDB
-    write_api = client.write_api(write_options=SYNCHRONOUS)
-    write_api.write(bucket="dmnOutputs", record=point)
-
+insertDataMultipleMatrixRoomsForQrCodeRoomWithUpdate()
 
 def insert():
     client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
@@ -274,8 +291,6 @@ def bucketApi():
     s = b.find_buckets()
     print(s)
 
-
-
 def userDemo():
     client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
     bucket = "topics"
@@ -347,4 +362,4 @@ def userDemo():
 #userDemo()
 #readUser()
 
-deleteUser()
+#deleteUser()

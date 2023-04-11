@@ -101,6 +101,10 @@ class MessagesDBHandler:
     # find messages for specific room identified by roomID(Matrix) + qrcodeID(App) -> just for check
     def readMessagesDataForRoom(self, key_values):
         return self.__collection.find_one({messagesCollectionKeys[0]: key_values[0], messagesCollectionKeys[1]: key_values[1]})
+    
+    # find messages for specific room identified by qrcodeID(App) 
+    def readMessagesDataForAllRooms(self, key_value):
+        return list(self.__collection.find({messagesCollectionKeys[1]: key_value}))
 
 class EntityRoomDBHandler:
     def __init__(self, collection: Collection) -> None:

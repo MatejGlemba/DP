@@ -62,7 +62,7 @@ class RoomDataAndBlacklistTopicHandler:
         self.__roomDataTopicProducer: KafkaProducer = KafkaProducer(producer=Producer({'bootstrap.servers' : 'localhost:9094'}))
     
     def consume(self):
-        return self.__roomDataBLTopicConsumer.consume(dataClass=deserializers.KafkaDeserializerObject)
+        return self.__roomDataBLTopicConsumer.consumeMore([deserializers.BlacklistData, deserializers.RoomData])
     
     def produce(self, object=serializers.KafkaObject):
         if isinstance(object, serializers.BlacklistData):

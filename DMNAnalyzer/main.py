@@ -71,8 +71,12 @@ def messageAnalyzer():
                # model_topics = encrypt.encrypt(model_topics)
                # ner_labels = encrypt.encrypt(ner_labels)
 
-                #if entityRoomDBHandler.checkEntityRoom([msgData.roomID, msgData.qrcodeID]):
+                # influxDB
                 entityRoomDBHandler.updateTopics(msgData.roomID, msgData.qrcodeID, model_topics)
+
+                # pouzitie mongoDB
+                #if entityRoomDBHandler.checkEntityRoom([msgData.roomID, msgData.qrcodeID]):
+                #    entityRoomDBHandler.updateTopics([msgData.roomID, msgData.qrcodeID], model_topics)
                 #else:
                 #    roomEntity : RoomEntity = RoomEntity(msgData.roomID, msgData.qrcodeID, model_topics)
                 #    entityRoomDBHandler.insertEntityRoom(roomEntity)
@@ -82,12 +86,14 @@ def BlRoomAnalyzer():
     roomDataHandler = KafkaHandler.RoomDataAndBlacklistTopicHandler()
     dbHandler = DBHandler()
     influxDBHandler = InfluxDBHandler()
+    messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
     roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
     entityUserDBHandler : EntityUserDBHandler = influxDBHandler.getEntityUserDBHandler()
+    entityRoomDBHandler : EntityRoomDBHandler = influxDBHandler.getEntityRoomDBHandler()
 
     while True:
-        data : KafkaDeserializerObject = roomDataHandler.consume()
+        data = roomDataHandler.consume()
         print("Blacklist and Room analyzer - waiting for data")
 
         if data:
@@ -95,22 +101,48 @@ def BlRoomAnalyzer():
             if isinstance(data, RoomData):
                 print("roomData")
                 if roomDBHandler.readRoomData(data.qrcodeID):
-                    roomDBHandler.updateRoomData(data)
+                    roomDBHandler.updateRoomData(data.qrcodeID, data)
                 else:
                     roomDBHandler.insertRoomData(data)
                 print("input: ", data.__dict__)
+
+                # read all rooms for qrcodeID
+                rooms : List[Dict] = messagesDBHandler.readMessagesDataForAllRooms(data.qrcodeID)
+                for room in rooms:
+                    roomID = room['roomID']
+                    #print("Data from MongoDB", messagesInRoom)
+                    messages: List[str] = room['data']
+
+                    # add description and room Name into messages with
+                    messages.append(data.description)
+                    messages.append(data.roomName)
+
+                    messages, ner_labels = text_Preprocessing.process(messages)
+                    # list of (int, list of (str, float))
+                    model_topics = topic_modeling.runModel(messages, 10)
+
+                    # do some calculation with description and room Name
+                    model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
+                    # print(model_topics)
+
+                    # model_topics = encrypt.encrypt(model_topics)
+                    # ner_labels = encrypt.encrypt(ner_labels)
+
+                    # influxDB
+                    entityRoomDBHandler.updateTopics(roomID, data.qrcodeID, model_topics)
+
             elif isinstance(data, BlacklistData):
                 print("blacklistData")
                 if blacklistDBHandler.readBlacklistData(data.userID):
-                    blacklistDBHandler.updateBlacklistData(data)
+                    blacklistDBHandler.updateBlacklistData(data.userID, data)
                 else:
                     blacklistDBHandler.insertBlacklistData(data)
                 print("input: ", data.__dict__)
 
                 blacklistData = blacklistDBHandler.readBlacklistData(data.userID)
-                messages, ner_labels = text_Preprocessing.process(blacklistData['notes'])
+                messages, ner_labels = text_Preprocessing.process([blacklistData['notes']])
                 # list of (int, list of (str, float))
-                model_topics = topic_modeling.runModel(messages, 10)
+                model_topics = topic_modeling.runModel(messages, 1)
                 model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
                 entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
             else:

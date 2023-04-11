@@ -34,8 +34,8 @@ def remove():
 
 def db_client():
     client = MongoClient("mongodb://root:rootpassword@localhost:27017/")
-    db = client[analyzerDBOutputs]
-    collection = db[entityModelRoom]
+    db = client[analyzerDBInputs]
+    collection = db[topicModelMessages]
     #docs = []
     #doc = []
     #doc.append("mongodb asdfkh asdkfjh askdfha")
@@ -49,14 +49,23 @@ def db_client():
     #    "data" : docs
     #}
     #rec = collection.insert_one(record)
-    print(collection)
-    ss = list(collection.find({}))
+
+    #print(collection)
+    #ss = list(collection.find({}))
+    #for s in ss:
+    #    print("update", s)
+    
+
+    qrcodeID = 'axAK2s300AFUXR8zfaab'
+    ss = list(collection.find({'qrcodeID' : qrcodeID}))
     for s in ss:
-        print("update", s)
+        print(type(s))
+        print("data", s['roomID'])
+    
     #newData = ["sadf asdlfkjg sdg"]
     #update_data(collection, 1, 3, newData)
     #s = collection.find_one({'roomID' : 1})
     #print("after update", s )
 
 db_client()
-remove()
+#remove()

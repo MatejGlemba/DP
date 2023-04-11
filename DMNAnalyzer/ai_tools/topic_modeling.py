@@ -28,6 +28,9 @@ def train(corpus, id2word, num_topics):
     #num_topics = 10
 
     # Build LDA model
+    # print("corpus", corpus)
+    # print("id2word", id2word)
+    # print("numOftopics", num_topics)
     lda_model = gensim.models.LdaMulticore(corpus=corpus, id2word=id2word,num_topics=num_topics)
     # Print the Keyword in the 10 topics
     #pprint(lda_model.print_topics())

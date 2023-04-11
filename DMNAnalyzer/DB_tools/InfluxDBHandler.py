@@ -28,6 +28,7 @@ class EntityRoomDBHandler:
 
     def updateTopics(self, roomID: str, qrcodeID: str, topics: Dict[int, List[Tuple[float, str]]]):
         client = InfluxDBClient(url=url, token=token, org=organization) 
+
         # read - check if exists
         queryAPI = client.query_api()
         query = f'from(bucket:"{bucket}")\

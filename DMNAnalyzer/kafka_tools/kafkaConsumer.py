@@ -1,5 +1,8 @@
+from typing import List
 from confluent_kafka import Consumer, Message
 from kafka_tools import deserializers
+
+
 
 class KafkaConsumer:
     def __init__(self, consumer: Consumer, topic, poll_timeout: float = 1.0) -> None:
@@ -21,6 +24,16 @@ class KafkaConsumer:
             msg = msg.value()
             print(msg)
             return deserializers.deserialize(jsonValue=msg, dataClass=dataClass)
+        
+    def consumeMore(self, dataClasses: List) -> Message:
+        msg = self.__consumer.poll(timeout=self.__poll_timeout)
+        if msg:
+            msg = msg.value()
+            msgDict = eval(msg)
+            if 'userID' in msgDict.keys():
+                return deserializers.deserialize(jsonValue=msg, dataClass=dataClasses[0])
+            else:
+                return deserializers.deserialize(jsonValue=msg, dataClass=dataClasses[1])
     
     def commit(self):
         self.__consumer.commit(asynchronous=True)
