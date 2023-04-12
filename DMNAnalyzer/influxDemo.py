@@ -346,6 +346,98 @@ def userDemo():
 
     # close
     client.close()
+
+def clearDB():
+    client = InfluxDBClient(url="http://localhost:8086", token="6jDTh95X6RUeFedSzJ3B_9LVFSG5g_Ra0HwOZfO_OR-y9am02-WWCx-F1LUIXnhCQEXpbWDIcWpM8Vxefo054Q==", org="dmn")
+    
+    query = 'from(bucket:"topics")\
+    |> range(start: -inf)\
+    |> filter(fn:(r) => r._measurement == "entity-model-room")'
+    
+    results = {}
+    result = client.query_api().query(query)
+    for table in result:
+        for record in table.records:
+            results = record.values
+
+    delete_api = client.delete_api()
+
+    """
+    Delete Data
+    """
+    if results:
+        start = results['_start']
+        stop = results['_stop']
+        measurement = results['_measurement']
+
+        predicate = f'_measurement=\"{measurement}\"'
+        # print(predicate)
+        # print("start", start)
+        # print("stop", stop)
+        s  = delete_api.delete(start=start, stop=stop, predicate=predicate, bucket='topics', org='dmn')
+        print(s)
+
+    query = 'from(bucket:"topics")\
+    |> range(start: -inf)\
+    |> filter(fn:(r) => r._measurement == "entity-model-user")'
+    
+    results = {}
+    result = client.query_api().query(query)
+    for table in result:
+        for record in table.records:
+            results = record.values
+
+    delete_api = client.delete_api()
+
+    """
+    Delete Data
+    """
+    if results:
+        start = results['_start']
+        stop = results['_stop']
+        measurement = results['_measurement']
+
+        predicate = f'_measurement=\"{measurement}\"'
+        # print(predicate)
+        # print("start", start)
+        # print("stop", stop)
+        s  = delete_api.delete(start=start, stop=stop, predicate=predicate, bucket='topics', org='dmn')
+        print(s)
+
+
+    query = 'from(bucket:"topics")\
+    |> range(start: -inf)\
+    |> filter(fn:(r) => r._measurement == "temp")'
+    
+    results = {}
+    result = client.query_api().query(query)
+    for table in result:
+        for record in table.records:
+            results = record.values
+
+    delete_api = client.delete_api()
+
+    """
+    Delete Data
+    """
+    if results:
+        start = results['_start']
+        stop = results['_stop']
+        measurement = results['_measurement']
+
+        predicate = f'_measurement=\"{measurement}\"'
+        # print(predicate)
+        # print("start", start)
+        # print("stop", stop)
+        s  = delete_api.delete(start=start, stop=stop, predicate=predicate, bucket='topics', org='dmn')
+        print(s)
+
+    """
+    Close client
+    """
+    client.close()
+
+
 # insertData()
 
 
@@ -363,3 +455,5 @@ def userDemo():
 #readUser()
 
 #deleteUser()
+
+clearDB()

@@ -67,5 +67,5 @@ def db_client():
     #s = collection.find_one({'roomID' : 1})
     #print("after update", s )
 
-db_client()
+#db_client()
 #remove()

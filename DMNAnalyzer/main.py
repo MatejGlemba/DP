@@ -37,7 +37,7 @@ def messageAnalyzer():
             
             # check hate speech, notify app server, save user data 
             if hatespeechChecker.checkHate(msgData.data):
-                entityUserDBHandler.updateHateSpeech(msgData.userID, True)
+                entityUserDBHandler.updateHateSpeech(msgData.userID)
                 output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "HATE")
                 print("produce :", output.__dict__)
                 #messageOutputHandler.produce(output)
@@ -45,7 +45,7 @@ def messageAnalyzer():
 
             # check spam, notify app server, save user data
             if spamChecker.checkSpam(msgData.data):
-                entityUserDBHandler.updateSpamming(msgData.userID, True)
+                entityUserDBHandler.updateSpamming(msgData.userID)
                 output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "SPAM")
                 print("produce :", output.__dict__)
                 #messageOutputHandler.produce(output)
@@ -113,9 +113,11 @@ def BlRoomAnalyzer():
                     #print("Data from MongoDB", messagesInRoom)
                     messages: List[str] = room['data']
 
-                    # add description and room Name into messages with
-                    messages.append(data.description)
-                    messages.append(data.roomName)
+                    # add description and room Name into messages with some ratio 2x for description, 3x for room name
+                    for _ in range(2):
+                        messages.append(data.description)
+                    for _ in range(3):
+                        messages.append(data.roomName)
 
                     messages, ner_labels = text_Preprocessing.process(messages)
                     # list of (int, list of (str, float))

@@ -114,7 +114,7 @@ class EntityUserDBHandler:
         # close
         client.close()
 
-    def updateHateSpeech(self, userID: str, hate: bool):
+    def updateHateSpeech(self, userID: str):
         client = InfluxDBClient(url=url, token=token, org=organization) 
         # read - check if exists
         queryAPI = client.query_api()
@@ -149,19 +149,21 @@ class EntityUserDBHandler:
     
         for result in results:
             if result['_field'] == 'hateSpeech':
-                point.field(result['_field'], int(hate))
+                numOfHate = int(result['_value'])
+                numOfHate += 1
+                point.field(result['_field'], numOfHate)
             else:
                 point.field(result['_field'], result['_value'])
 
         if not hateWasPresent:
-            point.field("hateSpeech", int(hate))
+            point.field("hateSpeech", 1)
 
         writeAPI.write(bucket=bucket, record=point)    
 
         # close
         client.close()
  
-    def updateSpamming(self, userID: str, spam: bool):
+    def updateSpamming(self, userID: str):
         client = InfluxDBClient(url=url, token=token, org=organization) 
         # read - check if exists
         queryAPI = client.query_api()
@@ -196,12 +198,14 @@ class EntityUserDBHandler:
     
         for result in results:
             if result['_field'] == 'spamming':
-                point.field(result['_field'], int(spam))
+                numOfSpam = int(result['_value'])
+                numOfSpam += 1
+                point.field(result['_field'], numOfSpam)
             else:
                 point.field(result['_field'], result['_value'])
 
         if not spamWasPresent:
-            point.field("spamming", int(spam))
+            point.field("spamming", 1)
         
         writeAPI.write(bucket=bucket, record=point)    
 
