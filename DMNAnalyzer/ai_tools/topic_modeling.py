@@ -39,6 +39,7 @@ def train(corpus, id2word, num_topics):
     return lda_model.print_topics()
 
 def runModel(data_words, num_topics=10):    
+    # data_words - list of (int, list of (str, float))
     id2word = corpora.Dictionary(data_words)
     texts = data_words
     corpus = [id2word.doc2bow(text) for text in texts]

@@ -72,6 +72,7 @@ class EntityUserDBHandler:
     def __init__(self, measurement: str) -> None:
         self.__measurement = measurement
 
+    # there is always only one topic 
     def updateTopics(self, userID: str, topics: Dict[int, List[Tuple[float, str]]]):
         client = InfluxDBClient(url=url, token=token, org=organization) 
         # read - check if exists
@@ -82,9 +83,15 @@ class EntityUserDBHandler:
             |> filter(fn:(r) => r.userID == "{userID}")'
             
         results : List[Dict] = []
+        hate = 0
+        spam = 0
         result = queryAPI.query(query)
         for table in result:
             for record in table.records:
+                if record['_field'] == 'hateSpeech':
+                    hate = int(record['_value'])
+                if record['_field'] == 'spamming':
+                    spam = int(record['_value'])
                 results.append(record.values)
 
         # if exists delete
@@ -96,7 +103,6 @@ class EntityUserDBHandler:
 
             predicate = f'_measurement=\"{self.__measurement}\" and userID=\"{userID}\"'
             deleteAPI.delete(start=start, stop=stop, predicate=predicate, bucket=bucket, org=organization)
-            results = []
 
         # insert new topics with original flags
         writeAPI = client.write_api(write_options=ASYNCHRONOUS)
@@ -107,8 +113,8 @@ class EntityUserDBHandler:
             for weight, word in topicList:
                 point.field(word, weight)
 
-            #point.field("hateSpeech", hateSpeech)
-            #point.field("spamming", spamming)
+            point.field("hateSpeech", hate)
+            point.field("spamming", spam)
             writeAPI.write(bucket=bucket, record=point)    
 
         # close
