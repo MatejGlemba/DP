@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple
 from pymongo.collection import Collection
 from influxdb_client import InfluxDBClient, Point
-from influxdb_client.client.write_api import ASYNCHRONOUS
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 messagesCollectionKeys = ['roomID', 'qrcodeID', 'topicNum']
 blacklistCollectionKeys = ['userID', 'topicNum']
@@ -62,7 +62,7 @@ class EntityRoomDBHandler:
             for weight, word in topicList:
                 point.field(word, weight)
 
-            writeAPI = client.write_api(write_options=ASYNCHRONOUS)
+            writeAPI = client.write_api(write_options=SYNCHRONOUS)
             writeAPI.write(bucket=bucket, record=point)
         
         # close
@@ -105,7 +105,7 @@ class EntityUserDBHandler:
             deleteAPI.delete(start=start, stop=stop, predicate=predicate, bucket=bucket, org=organization)
 
         # insert new topics with original flags
-        writeAPI = client.write_api(write_options=ASYNCHRONOUS)
+        writeAPI = client.write_api(write_options=SYNCHRONOUS)
         for topicNum, topicList in topics.items():
             point = Point(self.__measurement).tag(blacklistCollectionKeys[0], userID)
             #point.tag(messagesCollectionKeys[1], topicNum)
@@ -150,7 +150,7 @@ class EntityUserDBHandler:
             results = []
 
         # insert new hate flag with original topics and spamming flag
-        writeAPI = client.write_api(write_options=ASYNCHRONOUS)
+        writeAPI = client.write_api(write_options=SYNCHRONOUS)
         point = Point(self.__measurement).tag(blacklistCollectionKeys[0], userID)
     
         for result in results:
@@ -199,7 +199,7 @@ class EntityUserDBHandler:
             results = []
 
         # insert new spam flag with original topics and hateSpeech flag
-        writeAPI = client.write_api(write_options=ASYNCHRONOUS)
+        writeAPI = client.write_api(write_options=SYNCHRONOUS)
         point = Point(self.__measurement).tag(blacklistCollectionKeys[0], userID)
     
         for result in results:

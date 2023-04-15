@@ -15,7 +15,7 @@ def messageAnalyzer():
     influxDBHandler = InfluxDBHandler()
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     entityRoomDBHandler: EntityRoomDBHandler = influxDBHandler.getEntityRoomDBHandler() 
-    entityUserDBHandler: EntityUserDBHandler = dbHandler.getEntityUserDBHandler()
+    entityUserDBHandler: EntityUserDBHandler = influxDBHandler.getEntityUserDBHandler()
     counter : Counter = Counter()
 
     while True:

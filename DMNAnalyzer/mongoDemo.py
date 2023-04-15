@@ -18,18 +18,18 @@ entityModelUser = 'entity-model-user'
 
 def remove():
     client = MongoClient("mongodb://root:rootpassword@localhost:27017/")
-    db = client[analyzerDBInputs]
-    collection = db[topicModelMessages]
+    db = client['analyzerDB-inputs']
+    collection = db['topic-model-messages']
     collection.drop()
-    collection = db[topicModelRoom]
+    collection = db['topic-model-room']
     collection.drop()
-    collection = db[topicModelUser]
+    collection = db['topic-model-user']
     collection.drop()
 
-    db = client[analyzerDBOutputs]
-    collection = db[entityModelRoom]
+    db = client['analyzerDB-outputs']
+    collection = db['entity-model-room']
     collection.drop()
-    collection = db[entityModelUser]
+    collection = db['entity-model-user']
     collection.drop()
 
 def db_client():

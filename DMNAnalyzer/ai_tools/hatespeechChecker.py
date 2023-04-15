@@ -27,7 +27,9 @@ def checkHate(text: str):
     
     # search for the pattern in the input text
     match = pattern.search(text)
-    
+    print("CHECK HATE ", text)
+    print("CHECK HATE results ", match)
+
     # if a match is found, return True
     if match:
         return True

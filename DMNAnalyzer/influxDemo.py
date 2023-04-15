@@ -354,28 +354,30 @@ def clearDB():
     |> range(start: -inf)\
     |> filter(fn:(r) => r._measurement == "entity-model-room")'
     
-    results = {}
+    results = []
     result = client.query_api().query(query)
     for table in result:
         for record in table.records:
-            results = record.values
+            results.append(record.values)
 
+    print(results)
     delete_api = client.delete_api()
 
     """
     Delete Data
     """
     if results:
-        start = results['_start']
-        stop = results['_stop']
-        measurement = results['_measurement']
+        for result in results:
+            start = result['_start']
+            stop = result['_stop']
+            measurement = result['_measurement']
 
-        predicate = f'_measurement=\"{measurement}\"'
-        # print(predicate)
-        # print("start", start)
-        # print("stop", stop)
-        s  = delete_api.delete(start=start, stop=stop, predicate=predicate, bucket='topics', org='dmn')
-        print(s)
+            predicate = f'_measurement=\"{measurement}\"'
+            # print(predicate)
+            # print("start", start)
+            # print("stop", stop)
+            s  = delete_api.delete(start=start, stop=stop, predicate=predicate, bucket='topics', org='dmn')
+            print(s)
 
     query = 'from(bucket:"topics")\
     |> range(start: -inf)\
