@@ -6,16 +6,20 @@ from utils.crypto import Crypto
 from utils.messagesCounter import Counter
 from ai_tools import hatespeechChecker, spamChecker, text_Preprocessing, topic_modeling
 from DB_tools.MongoHandler import DBHandler, MessagesDBHandler, BlacklistDBHandler
-from DB_tools.InfluxDBHandler import EntityRoomDBHandler, EntityUserDBHandler, InfluxDBHandler
+#from DB_tools.InfluxDBHandler import EntityRoomDBHandler, EntityUserDBHandler, InfluxDBHandler
+from DB_tools.PostgreSQLHandler import PostgresDBHandler, EntityRoomDBHandler, EntityUserDBHandler
 
-def messageAnalyzer():
+def messageAnalyzer(postgresDBHandler: PostgresDBHandler):
     messageTopicHandler = KafkaHandler.MessageTopicHandler()
     messageOutputHandler = KafkaHandler.MessageOutputsTopicHandler()
     dbHandler = DBHandler()
-    influxDBHandler = InfluxDBHandler()
+    #influxDBHandler = InfluxDBHandler()
+    #postgresDBHandler = PostgresDBHandler()
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
-    entityRoomDBHandler: EntityRoomDBHandler = influxDBHandler.getEntityRoomDBHandler() 
-    entityUserDBHandler: EntityUserDBHandler = influxDBHandler.getEntityUserDBHandler()
+    #entityRoomDBHandler: EntityRoomDBHandler = influxDBHandler.getEntityRoomDBHandler() 
+    #entityUserDBHandler: EntityUserDBHandler = influxDBHandler.getEntityUserDBHandler()
+    entityRoomDBHandler: EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler() 
+    entityUserDBHandler: EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
     counter : Counter = Counter()
 
     while True:
@@ -60,7 +64,7 @@ def messageAnalyzer():
                 model_topics = topic_modeling.runModel(messages, 10)
                 model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
 
-                # influxDB
+                # influxDB / postgreSQL
                 entityRoomDBHandler.updateTopics(msgData.roomID, msgData.qrcodeID, model_topics)
 
                 # pouzitie mongoDB
@@ -71,15 +75,18 @@ def messageAnalyzer():
                 #    entityRoomDBHandler.insertEntityRoom(roomEntity)
 
 
-def BlRoomAnalyzer():
+def BlRoomAnalyzer(postgresDBHandler: PostgresDBHandler):
     roomDataHandler = KafkaHandler.RoomDataAndBlacklistTopicHandler()
     dbHandler = DBHandler()
-    influxDBHandler = InfluxDBHandler()
+    #influxDBHandler = InfluxDBHandler()
+    #postgresDBHandler = PostgresDBHandler()
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
    # roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
-    entityUserDBHandler : EntityUserDBHandler = influxDBHandler.getEntityUserDBHandler()
-    entityRoomDBHandler : EntityRoomDBHandler = influxDBHandler.getEntityRoomDBHandler()
+   # entityUserDBHandler : EntityUserDBHandler = influxDBHandler.getEntityUserDBHandler()
+   # entityRoomDBHandler : EntityRoomDBHandler = influxDBHandler.getEntityRoomDBHandler()
+    entityUserDBHandler : EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
+    entityRoomDBHandler : EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler()
 
     while True:
         data = roomDataHandler.consume()
@@ -138,9 +145,10 @@ def BlRoomAnalyzer():
 
 
 if __name__ == "__main__":
-    p1 = Process(target=BlRoomAnalyzer)
+    postgresDBHandler = PostgresDBHandler()
+    p1 = Process(target=BlRoomAnalyzer, args=(postgresDBHandler,))
     p1.start()
-    p2 = Process(target=messageAnalyzer)
+    p2 = Process(target=messageAnalyzer, args=(postgresDBHandler,))
     p2.start()
 
     p1.join()

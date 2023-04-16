@@ -12,3 +12,4 @@ spacy==3.4.4
 dacite==1.7.0
 pycryptodome==3.10.1
 influxdb-client==1.19.0
+psycopg2-binary==2.9.6
