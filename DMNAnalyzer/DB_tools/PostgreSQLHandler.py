@@ -1,19 +1,13 @@
+import multiprocessing
 from typing import Dict, List, Tuple
 import psycopg2
 
-entityModelRoom = "entity_model_room"
-entityModelUserTopics = "entity_model_user_topics"
-entityModelUserFlags = "entity_model_user_flags"
-
-dbName='analyzerDB'
-user='admin'
-password='password'
-host='localhost'
-port='5434'
+# Define a global lock for coordination
+table_creation_lock = multiprocessing.Lock()
 
 class PostgresDBHandler:
-    def __init__(self) -> None:
-        self.__conn = psycopg2.connect(dbname=dbName,user=user,password=password,host=host,port=port)
+    def __init__(self, postgresDB : str, postgresUser : str, postgresPass : str, postgresHost : str, postgresPort : str) -> None:
+        self.__conn = psycopg2.connect(dbname=postgresDB,user=postgresUser,password=postgresPass,host=postgresHost,port=postgresPort)
         self.__createTables()
 
     def __createTables(self):
@@ -47,19 +41,20 @@ class PostgresDBHandler:
             CREATE TABLE IF NOT EXISTS entity_model_user_flags (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(100) UNIQUE,
-                violence INTEGER,
                 hate_speech INTEGER
             );
         """
-
-        cursor.execute(create_table_room_query)
-        cursor.execute(create_table_room_flags_query)
-        cursor.execute(create_table_user_topics_query)
-        cursor.execute(create_table_user_flags_query)
-        self.__conn.commit()
-        print("created")
-        cursor.close()
-        
+        with table_creation_lock:
+            try:
+                cursor.execute(create_table_room_query)
+                cursor.execute(create_table_room_flags_query)
+                cursor.execute(create_table_user_topics_query)
+                cursor.execute(create_table_user_flags_query)
+                self.__conn.commit()        
+            except Exception as e:
+                print(f"Error creating table: {e}")
+            finally:
+                cursor.close() 
 
     def getEntityRoomDBHandler(self):
         return EntityRoomDBHandler(conn=self.__conn)
@@ -74,24 +69,8 @@ class EntityRoomDBHandler:
     def __init__(self, conn) -> None:
         self.__conn = conn
 
-    def updateTopics(self, roomID: str, qrcodeID: str, topics: Dict[int, List[Tuple[float, str]]]):
+    def updateTopics(self, roomID: str, qrcodeID: str, topics: Dict[int, List[Tuple[float, str]]], overallTopics: Dict[int, List[Tuple[float, str]]]):
         cursor = self.__conn.cursor()
-
-        # for topicNum, topicList in topics.items():
-        #     for weight, word in topicList:
-        #         # Perform an upsert (insert or update)
-        #         cursor.execute("""
-        #             INSERT INTO entity_model_room (qrcodeID, roomID, topicNum, word, weight) 
-        #             VALUES (%s, %s, %s, %s, %s) 
-        #             ON CONFLICT ON CONSTRAINT unique_constraint DO UPDATE 
-        #             SET topicNum = EXCLUDED.topicNum,
-        #                 word = EXCLUDED.word,
-        #                 weight = EXCLUDED.weight
-        #         """, (qrcodeID, roomID, topicNum, word, weight))
-
-        # self.__conn.commit()
-        # cursor.close()
-
         
         # Check if the row already exists in the table
         cursor.execute("""
@@ -107,9 +86,13 @@ class EntityRoomDBHandler:
             """, (qrcodeID, roomID))
             
         values = []
+        for _, topicList in overallTopics.items():
+            for weight, word in topicList:
+                values.append((qrcodeID, roomID, 0, word, weight))
+
         for topicNum, topicList in topics.items():
             for weight, word in topicList:
-                values.append((qrcodeID, roomID, topicNum, word, weight))
+                values.append((qrcodeID, roomID, topicNum+1, word, weight))
 
         cursor.executemany("""
             INSERT INTO entity_model_room (qrcode_id, room_id, topic_num, word, weight) 
@@ -118,16 +101,17 @@ class EntityRoomDBHandler:
 
         self.__conn.commit()
         cursor.close()
+        
     def updateViolence(self, userID: str):
         cursor = self.__conn.cursor()
 
         # Perform an upsert (insert or update)
         cursor.execute("""
             INSERT INTO entity_model_room_flags (room_id, violence) 
-            VALUES (%s, %s, %s) 
+            VALUES (%s, %s) 
             ON CONFLICT (room_id) DO UPDATE 
             SET violence = entity_model_room_flags.violence + 1
-        """, (userID,1,0))
+        """, (userID,1))
 
         self.__conn.commit()
         cursor.close()
@@ -171,11 +155,11 @@ class EntityUserDBHandler:
 
         # Perform an upsert (insert or update)
         cursor.execute("""
-            INSERT INTO entity_model_user_flags (user_id, violence, hate_speech) 
-            VALUES (%s, %s, %s) 
+            INSERT INTO entity_model_user_flags (user_id, hate_speech) 
+            VALUES (%s, %s) 
             ON CONFLICT (user_id) DO UPDATE 
             SET hate_speech = entity_model_user_flags.hate_speech + 1
-        """, (userID,0,1))
+        """, (userID,1))
 
         self.__conn.commit()
         cursor.close()

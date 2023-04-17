@@ -22,18 +22,24 @@ class KafkaConsumer:
         msg = self.__consumer.poll(timeout=self.__poll_timeout)
         if msg:
             msg = msg.value()
-            print(msg)
+            #print(msg)
             return deserializers.deserialize(jsonValue=msg, dataClass=dataClass)
         
-    def consumeMore(self, dataClasses: List) -> Message:
+    def consumeMore(self) -> Message:
         msg = self.__consumer.poll(timeout=self.__poll_timeout)
         if msg:
             msg = msg.value()
             msgDict = eval(msg)
-            if 'userID' in msgDict.keys():
-                return deserializers.deserialize(jsonValue=msg, dataClass=dataClasses[0])
+            print(msgDict)
+            if 'notes' in msgDict.keys():
+                # Blacklist data
+                return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.BlacklistData)
+            elif 'description' in msgDict.keys():
+                # Room data
+                return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.RoomData)
             else:
-                return deserializers.deserialize(jsonValue=msg, dataClass=dataClasses[1])
+                # Message Data
+                return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.MessageData)
     
     def commit(self):
         self.__consumer.commit(asynchronous=True)
