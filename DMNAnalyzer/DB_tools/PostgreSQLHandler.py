@@ -28,6 +28,13 @@ class PostgresDBHandler:
                 weight REAL
             );
         """
+        create_table_room_flags_query = """
+            CREATE TABLE IF NOT EXISTS entity_model_room_flags (
+                id SERIAL PRIMARY KEY,
+                room_id VARCHAR(100) UNIQUE,
+                violence INTEGER
+            );
+        """
         create_table_user_topics_query = """
             CREATE TABLE IF NOT EXISTS entity_model_user_topics (
                 id SERIAL PRIMARY KEY,
@@ -40,12 +47,13 @@ class PostgresDBHandler:
             CREATE TABLE IF NOT EXISTS entity_model_user_flags (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(100) UNIQUE,
-                spamming INTEGER,
+                violence INTEGER,
                 hate_speech INTEGER
             );
         """
 
         cursor.execute(create_table_room_query)
+        cursor.execute(create_table_room_flags_query)
         cursor.execute(create_table_user_topics_query)
         cursor.execute(create_table_user_flags_query)
         self.__conn.commit()
@@ -110,6 +118,19 @@ class EntityRoomDBHandler:
 
         self.__conn.commit()
         cursor.close()
+    def updateViolence(self, userID: str):
+        cursor = self.__conn.cursor()
+
+        # Perform an upsert (insert or update)
+        cursor.execute("""
+            INSERT INTO entity_model_room_flags (room_id, violence) 
+            VALUES (%s, %s, %s) 
+            ON CONFLICT (room_id) DO UPDATE 
+            SET violence = entity_model_room_flags.violence + 1
+        """, (userID,1,0))
+
+        self.__conn.commit()
+        cursor.close()
 
 class EntityUserDBHandler:
     def __init__(self, conn) -> None:
@@ -150,7 +171,7 @@ class EntityUserDBHandler:
 
         # Perform an upsert (insert or update)
         cursor.execute("""
-            INSERT INTO entity_model_user_flags (user_id, spamming, hate_speech) 
+            INSERT INTO entity_model_user_flags (user_id, violence, hate_speech) 
             VALUES (%s, %s, %s) 
             ON CONFLICT (user_id) DO UPDATE 
             SET hate_speech = entity_model_user_flags.hate_speech + 1
@@ -159,16 +180,3 @@ class EntityUserDBHandler:
         self.__conn.commit()
         cursor.close()
  
-    def updateSpamming(self, userID: str):
-        cursor = self.__conn.cursor()
-
-        # Perform an upsert (insert or update)
-        cursor.execute("""
-            INSERT INTO entity_model_user_flags (user_id, spamming, hate_speech) 
-            VALUES (%s, %s, %s) 
-            ON CONFLICT (user_id) DO UPDATE 
-            SET spamming = entity_model_user_flags.spamming + 1
-        """, (userID,1,0))
-
-        self.__conn.commit()
-        cursor.close()

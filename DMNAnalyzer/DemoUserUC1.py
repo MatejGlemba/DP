@@ -5,24 +5,24 @@ from kafka_tools.serializers import BlacklistData, MessageData
 import csv
 
 def process1():
-    # #UC1_1
-    # messageTopicHandler = KafkaHandler.MessageTopicHandler()
-    # with open('demo_data/DemoUserUC1_1.csv', mode="r") as f:
-    #     csv_reader = csv.reader(f, delimiter='|')
-    #     header_row = next(csv_reader)
+    #UC1_1
+    messageTopicHandler = KafkaHandler.MessageTopicHandler()
+    with open('demo_data/DemoUserUC1_1.csv', mode="r") as f:
+        csv_reader = csv.reader(f, delimiter='|')
+        header_row = next(csv_reader)
             
-    #     # Loop through the remaining rows
-    #     for row in csv_reader:
-    #         # Create an empty dictionary for the current row
-    #         row_dict = {}
+        # Loop through the remaining rows
+        for row in csv_reader:
+            # Create an empty dictionary for the current row
+            row_dict = {}
             
-    #         # Loop through the values in the current row and add them to the dictionary
-    #         for i in range(len(row)):
-    #             row_dict[header_row[i]] = row[i]
-    #         print(row_dict)
-    #         #sleep(2)
-    #         messageTopicHandler.produce(MessageData(row_dict['roomID'], row_dict['qrcodeID'], row_dict['userID'], row_dict['data']))
-    #     messageTopicHandler.flush()
+            # Loop through the values in the current row and add them to the dictionary
+            for i in range(len(row)):
+                row_dict[header_row[i]] = row[i]
+            print(row_dict)
+            #sleep(2)
+            messageTopicHandler.produce(MessageData(row_dict['roomID'], row_dict['qrcodeID'], row_dict['userID'], row_dict['data']))
+        messageTopicHandler.flush()
 
     #UC1_2
     blacklistDataTopicHandler = KafkaHandler.RoomDataAndBlacklistTopicHandler()
@@ -44,23 +44,23 @@ def process1():
         blacklistDataTopicHandler.flush()
 
     #UC1_3
-    # messageTopicHandler = KafkaHandler.MessageTopicHandler()
-    # with open('demo_data/DemoUserUC1_3.csv', mode="r") as f:
-    #     csv_reader = csv.reader(f, delimiter='|')
-    #     header_row = next(csv_reader)
+    messageTopicHandler = KafkaHandler.MessageTopicHandler()
+    with open('demo_data/DemoUserUC1_3.csv', mode="r") as f:
+        csv_reader = csv.reader(f, delimiter='|')
+        header_row = next(csv_reader)
             
-    #     # Loop through the remaining rows
-    #     for row in csv_reader:
-    #         # Create an empty dictionary for the current row
-    #         row_dict = {}
+        # Loop through the remaining rows
+        for row in csv_reader:
+            # Create an empty dictionary for the current row
+            row_dict = {}
             
-    #         # Loop through the values in the current row and add them to the dictionary
-    #         for i in range(len(row)):
-    #             row_dict[header_row[i]] = row[i]
-    #         print(row_dict)
-    #         #sleep(2)
-    #         messageTopicHandler.produce(MessageData(row_dict['roomID'], row_dict['qrcodeID'], row_dict['userID'], row_dict['data']))
-    #     messageTopicHandler.flush()
+            # Loop through the values in the current row and add them to the dictionary
+            for i in range(len(row)):
+                row_dict[header_row[i]] = row[i]
+            print(row_dict)
+            #sleep(2)
+            messageTopicHandler.produce(MessageData(row_dict['roomID'], row_dict['qrcodeID'], row_dict['userID'], row_dict['data']))
+        messageTopicHandler.flush()
 
 def dbCleanup():
     from influxdb_client import InfluxDBClient
@@ -154,7 +154,7 @@ def dbCleanup():
 
 
 if __name__ == "__main__":
-    dbCleanup()
+   # dbCleanup()
     p1 = Process(target=process1)
     p1.start()
     p1.join()

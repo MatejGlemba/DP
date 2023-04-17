@@ -90,7 +90,7 @@ class EntityUserDBHandler:
             for record in table.records:
                 if record['_field'] == 'hateSpeech':
                     hate = int(record['_value'])
-                if record['_field'] == 'spamming':
+                if record['_field'] == 'violence':
                     spam = int(record['_value'])
                 results.append(record.values)
 
@@ -114,7 +114,7 @@ class EntityUserDBHandler:
                 point.field(word, weight)
 
             point.field("hateSpeech", hate)
-            point.field("spamming", spam)
+            point.field("violence", spam)
             writeAPI.write(bucket=bucket, record=point)    
 
         # close
@@ -149,7 +149,7 @@ class EntityUserDBHandler:
             deleteAPI.delete(start=start, stop=stop, predicate=predicate, bucket=bucket, org=organization)
             results = []
 
-        # insert new hate flag with original topics and spamming flag
+        # insert new hate flag with original topics and violence flag
         writeAPI = client.write_api(write_options=SYNCHRONOUS)
         point = Point(self.__measurement).tag(blacklistCollectionKeys[0], userID)
     
@@ -169,7 +169,7 @@ class EntityUserDBHandler:
         # close
         client.close()
  
-    def updateSpamming(self, userID: str):
+    def updateViolence(self, userID: str):
         client = InfluxDBClient(url=url, token=token, org=organization) 
         # read - check if exists
         queryAPI = client.query_api()
@@ -183,7 +183,7 @@ class EntityUserDBHandler:
         result = queryAPI.query(query)
         for table in result:
             for record in table.records:
-                if record['_field'] == 'spamming':
+                if record['_field'] == 'violence':
                     spamWasPresent = True
                 results.append(record.values)
 
@@ -203,7 +203,7 @@ class EntityUserDBHandler:
         point = Point(self.__measurement).tag(blacklistCollectionKeys[0], userID)
     
         for result in results:
-            if result['_field'] == 'spamming':
+            if result['_field'] == 'violence':
                 numOfSpam = int(result['_value'])
                 numOfSpam += 1
                 point.field(result['_field'], numOfSpam)
@@ -211,7 +211,7 @@ class EntityUserDBHandler:
                 point.field(result['_field'], result['_value'])
 
         if not spamWasPresent:
-            point.field("spamming", 1)
+            point.field("violence", 1)
         
         writeAPI.write(bucket=bucket, record=point)    
 

@@ -154,7 +154,7 @@ def insertUser():
     point.field('hateSpeech', 0)
     write_api.write(bucket="topics", record=point)
     point = Point(measurement_name).tag('userID', userID)
-    point.field('spamming', 1)
+    point.field('violence', 1)
     write_api.write(bucket="topics", record=point)
 
     client.close()
@@ -315,14 +315,14 @@ def userDemo():
         for result in results:
             if 'hateSpeech' == result['_field']:
                 hateSpeech = result['_value']
-            if 'spamming' == result['_field']:
-                spamming = result['_value']
+            if 'violence' == result['_field']:
+                violence = result['_value']
             start = result['_start']
             stop = result['_stop']
         print("start",start)
         print("stop",stop)
         print("hate", hateSpeech)
-        print("spam", spamming)
+        print("spam", violence)
         predicate = f'_measurement=\"{measurement}\" and userID=\"{userID}\"'
         deleteAPI.delete(start=start, stop=stop, predicate=predicate, bucket=bucket, org='dmn')
         results = []
@@ -339,7 +339,7 @@ def userDemo():
     print(hateSpeech)
     print(type(hateSpeech))
     point.field("hateSpeech", hateSpeech)
-    point.field("spamming", spamming)
+    point.field("violence", violence)
 
     print(point.__dict__)
     writeAPI.write(bucket=bucket, record=point)    

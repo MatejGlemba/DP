@@ -4,24 +4,24 @@ from kafka_tools import KafkaHandler
 from kafka_tools.deserializers import MessageData, BlacklistData, MessageOutputs, RoomData
 from utils.crypto import Crypto
 from utils.messagesCounter import Counter
-from ai_tools import hatespeechChecker, spamChecker, text_Preprocessing, topic_modeling
+from ai_tools import hatespeechChecker, violenceChecker, text_Preprocessing, topic_modeling
 from DB_tools.MongoHandler import DBHandler, MessagesDBHandler, BlacklistDBHandler
 #from DB_tools.InfluxDBHandler import EntityRoomDBHandler, EntityUserDBHandler, InfluxDBHandler
 from DB_tools.PostgreSQLHandler import PostgresDBHandler, EntityRoomDBHandler, EntityUserDBHandler
 
-def messageAnalyzer(postgresDBHandler: PostgresDBHandler):
+def messageAnalyzer():
     messageTopicHandler = KafkaHandler.MessageTopicHandler()
     messageOutputHandler = KafkaHandler.MessageOutputsTopicHandler()
     dbHandler = DBHandler()
     #influxDBHandler = InfluxDBHandler()
-    #postgresDBHandler = PostgresDBHandler()
+    postgresDBHandler = PostgresDBHandler()
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     #entityRoomDBHandler: EntityRoomDBHandler = influxDBHandler.getEntityRoomDBHandler() 
     #entityUserDBHandler: EntityUserDBHandler = influxDBHandler.getEntityUserDBHandler()
     entityRoomDBHandler: EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler() 
     entityUserDBHandler: EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
     counter : Counter = Counter()
-
+    print(type(postgresDBHandler))
     while True:
         msgData : MessageData = messageTopicHandler.consume()
         print("Message analyzer - waiting for data")
@@ -46,14 +46,6 @@ def messageAnalyzer(postgresDBHandler: PostgresDBHandler):
                 #messageOutputHandler.produce(output)
 
 
-            # check spam, notify app server, save user data
-            if spamChecker.checkSpam(msgData.data):
-                entityUserDBHandler.updateSpamming(msgData.userID)
-                output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "SPAM")
-                print("produce :", output.__dict__)
-                #messageOutputHandler.produce(output)
-
-
             if counter.get_counter(msgData.roomID, msgData.qrcodeID) == 10:
                 print("update entity room model for: ", msgData.roomID, msgData.qrcodeID)
                 counter.set_counter(msgData.roomID, msgData.qrcodeID)
@@ -67,6 +59,15 @@ def messageAnalyzer(postgresDBHandler: PostgresDBHandler):
                 # influxDB / postgreSQL
                 entityRoomDBHandler.updateTopics(msgData.roomID, msgData.qrcodeID, model_topics)
 
+                # check violence
+                print("Messages", messages)
+                messages = ' '.join([' '.join(message) for message in messages])
+                print("Messages string", )
+                if violenceChecker.check_content(messages):
+                    print("violence detected")
+                    entityRoomDBHandler.updateViolence(msgData.roomID)
+                
+                #messageOutputHandler.produce(output)
                 # pouzitie mongoDB
                 #if entityRoomDBHandler.checkEntityRoom([msgData.roomID, msgData.qrcodeID]):
                 #    entityRoomDBHandler.updateTopics([msgData.roomID, msgData.qrcodeID], model_topics)
@@ -75,11 +76,11 @@ def messageAnalyzer(postgresDBHandler: PostgresDBHandler):
                 #    entityRoomDBHandler.insertEntityRoom(roomEntity)
 
 
-def BlRoomAnalyzer(postgresDBHandler: PostgresDBHandler):
+def BlRoomAnalyzer():
     roomDataHandler = KafkaHandler.RoomDataAndBlacklistTopicHandler()
     dbHandler = DBHandler()
     #influxDBHandler = InfluxDBHandler()
-    #postgresDBHandler = PostgresDBHandler()
+    postgresDBHandler = PostgresDBHandler()
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
    # roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
@@ -88,6 +89,7 @@ def BlRoomAnalyzer(postgresDBHandler: PostgresDBHandler):
     entityUserDBHandler : EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
     entityRoomDBHandler : EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler()
 
+    print(type(postgresDBHandler))
     while True:
         data = roomDataHandler.consume()
         print("Blacklist and Room analyzer - waiting for data")
@@ -121,7 +123,6 @@ def BlRoomAnalyzer(postgresDBHandler: PostgresDBHandler):
 
                     messages, ner_labels = text_Preprocessing.process(messages)
                     model_topics = topic_modeling.runModel(messages, 10)
-
                     model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
 
                     # influxDB
@@ -139,16 +140,16 @@ def BlRoomAnalyzer(postgresDBHandler: PostgresDBHandler):
                 model_topics = topic_modeling.runModel(messages, 1)
                 model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
                 entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
+
             else:
                 print("else")
                 continue
 
 
 if __name__ == "__main__":
-    postgresDBHandler = PostgresDBHandler()
-    p1 = Process(target=BlRoomAnalyzer, args=(postgresDBHandler,))
+    p1 = Process(target=BlRoomAnalyzer)
     p1.start()
-    p2 = Process(target=messageAnalyzer, args=(postgresDBHandler,))
+    p2 = Process(target=messageAnalyzer)
     p2.start()
 
     p1.join()

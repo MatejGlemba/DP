@@ -13,12 +13,12 @@ class RoomEntity:
 class UserEntity:
     userID: str
     hateSpeech: bool
-    spamming: bool
+    violence: bool
     blacklistTopics: List
 
-    def __init__(self, userID, hateSpeech, spamming, blacklistTopics: List):
+    def __init__(self, userID, hateSpeech, violence, blacklistTopics: List):
         self.userID = userID
         self.hateSpeech = hateSpeech
-        self.spamming = spamming
+        self.violence = violence
         self.blacklistTopics = blacklistTopics
 

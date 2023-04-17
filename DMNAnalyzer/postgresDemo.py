@@ -2,6 +2,7 @@ import psycopg2
 from DB_tools.PostgreSQLHandler import EntityRoomDBHandler, EntityUserDBHandler, PostgresDBHandler
 
 entityModelRoom = 'entity_model_room'
+entityModelRoomFlags = 'entity_model_room_flags'
 entityModelUserTopics = 'entity_model_user_topics'
 entityModelUserFlags = 'entity_model_user_flags'
 
@@ -84,15 +85,12 @@ def demoUser():
     read(entityModelUserFlags)
     entityUserDbHandler.updateHateSpeech(userID=userID)
     read(entityModelUserFlags)
-    entityUserDbHandler.updateSpamming(userID=userID)
-    read(entityModelUserFlags)
     topics = {"0" : [(0.6, "ha"), (0.2, "halo"), (0.2, "ha")]} 
     entityUserDbHandler.updateTopics(userID=userID, topics=topics)
     read(entityModelUserTopics)
     topics = {"0" : [(0.6, "ha"), (0.5, "halo"), (0.2, "hah")]} 
     entityUserDbHandler.updateTopics(userID=userID, topics=topics)
     read(entityModelUserTopics)
-    entityUserDbHandler.updateSpamming(userID=userID)
     read(entityModelUserFlags)
 
 # delete(entityModelRoom)
@@ -108,6 +106,7 @@ def demoUser():
 
 
 drop(entityModelRoom)
+drop(entityModelRoomFlags)
 drop(entityModelUserTopics)
 drop(entityModelUserFlags)
 
