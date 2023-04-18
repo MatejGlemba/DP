@@ -4,6 +4,8 @@ from kafka_tools import KafkaHandler
 from kafka_tools.serializers import RoomData, MessageData
 import csv
 
+from utils.crypto import Crypto
+
 def process1():
     #UC1_1
     handler = KafkaHandler.RoomDataAndBlacklistTopicHandler('localhost:9094')
@@ -39,7 +41,6 @@ def process1():
             for i in range(len(row)):
                 row_dict[header_row[i]] = row[i]
             print(row_dict)
-           # sleep(5)
             messageTopicHandler.produce(MessageData(row_dict['roomID'], row_dict['qrcodeID'], row_dict['userID'], row_dict['data']))
         messageTopicHandler.flush()
     
@@ -63,6 +64,4 @@ def process1():
         handler.flush()
 
 if __name__ == "__main__":
-    p1 = Process(target=process1)
-    p1.start()
-    p1.join()
+    process1()

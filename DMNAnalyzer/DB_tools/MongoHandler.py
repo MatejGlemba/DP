@@ -52,11 +52,11 @@ class MessagesDBHandler:
 
 
     # first insert of data for specific room identified by roomID(Matrix) + qrcodeID(App) -> messages are represented as a list
-    def insertMessageData(self, msgData: MessageData):
+    def insertMessageData(self, roomID: str, qrcodeID: str, data: str):
         newRecord = {
-            "roomID" : msgData.roomID, 
-            "qrcodeID" : msgData.qrcodeID, 
-            "data" : [msgData.data]
+            "roomID" : roomID, 
+            "qrcodeID" : qrcodeID, 
+            "data" : [data]
         }
         self.__collection.insert_one(newRecord)
 

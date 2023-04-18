@@ -64,17 +64,23 @@ def read(model):
     conn.close()
 
 def demoRoom():
-    postgresHandler : PostgresDBHandler = PostgresDBHandler()
+    postgresHandler : PostgresDBHandler = PostgresDBHandler('analyzerDB', 'admin', 'password', 'localhost', '5434')
     entityRoomDbHandler : EntityRoomDBHandler = postgresHandler.getEntityRoomDBHandler()
 
     roomID = "room123"
     qrcodeId = "qr1"
-    topics = {"0" : [(0.6, "ha"), (0.2, "halo"), (0.2, "ha")]} 
-    entityRoomDbHandler.updateTopics(roomID=roomID, qrcodeID=qrcodeId, topics=topics)
+    overallTopics = {"0" : [(0.6, "ha"), (0.2, "halo"), (0.2, "ha")]} 
+    entityRoomDbHandler.updateTopics(roomID=roomID, qrcodeID=qrcodeId, topics=overallTopics, overallTopics=overallTopics)
     read(entityModelRoom)
     topics = {"0" : [(0.6, "ha"), (0.5, "halo"), (0.2, "hah")],  "1" : [(0.6, "aloha"), (0.3, "hao"), (0.1, "haloh")]} 
-    entityRoomDbHandler.updateTopics(roomID=roomID, qrcodeID=qrcodeId, topics=topics)
+    entityRoomDbHandler.updateTopics(roomID=roomID, qrcodeID=qrcodeId, topics=topics, overallTopics=overallTopics)
     read(entityModelRoom)
+    flags = {'sexual': False, 'hate': True, 'violence': False, 'self-harm': False, 'sexual/minors': False, 'hate/threatening': False, 'violence/graphic': False}
+    entityRoomDbHandler.updateViolence(roomID, flags)
+    flags = {'sexual': False, 'hate': False, 'violence': True, 'self-harm': False, 'sexual/minors': False, 'hate/threatening': False, 'violence/graphic': False}
+    entityRoomDbHandler.updateViolence(roomID, flags)
+    flags = {'sexual': False, 'hate': False, 'violence': True, 'self-harm': False, 'sexual/minors': True, 'hate/threatening': False, 'violence/graphic': False}
+    entityRoomDbHandler.updateViolence(roomID, flags)
 
 def demoUser():
     postgresHandler : PostgresDBHandler = PostgresDBHandler()
@@ -95,7 +101,7 @@ def demoUser():
 
 # delete(entityModelRoom)
 # drop(entityModelRoom)
-# demoRoom()
+#demoRoom()
 
 # delete(entityModelUserFlags)
 # drop(entityModelUserFlags)

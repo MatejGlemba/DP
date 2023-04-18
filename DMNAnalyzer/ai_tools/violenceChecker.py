@@ -68,8 +68,8 @@ def check_content(text):
         print(result)
         flags = result['results'][0]
         if flags['flagged']:
-            return True
-        return False
+            return flags['categories']
+        return None
     else:
         # Print error message if request fails
         print('Error:', response.text)

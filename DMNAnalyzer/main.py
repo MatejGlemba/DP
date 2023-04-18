@@ -1,4 +1,5 @@
 from multiprocessing import Process
+import re
 import time
 from typing import Dict, List, Tuple
 from kafka_tools import KafkaHandler
@@ -49,17 +50,18 @@ def messageAnalyzer():
     while True:
         msgData : MessageData = messageTopicHandler.consume()
         print("Message analyzer - waiting for data")
-
+        messageTopicHandler.commit()
         if msgData:
             print("input: ", msgData.__dict__)
             counter.inc_counter(msgData.roomID, msgData.qrcodeID)
 
             # save incoming data into MongoDB
             if messagesDBHandler.readMessagesDataForRoom(msgData.roomID, msgData.qrcodeID):
-                # msgData = encrypt.encrypt(msgData.data)
-                messagesDBHandler.updateMessagesData(msgData.roomID, msgData.qrcodeID, msgData.data)
+                msgDataEncrypted = Crypto.encryptFun(msgData.data)
+                messagesDBHandler.updateMessagesData(msgData.roomID, msgData.qrcodeID, msgDataEncrypted)
             else:
-                messagesDBHandler.insertMessageData(msgData)
+                msgDataEncrypted = Crypto.encryptFun(msgData.data)
+                messagesDBHandler.insertMessageData(msgData.roomID, msgData.qrcodeID, msgDataEncrypted)
             
             # check hate speech, notify app server, save user data 
             if hatespeechChecker.checkHate(msgData.data):
@@ -83,10 +85,10 @@ def messageAnalyzer():
                         print("Waiting for reset")
                     else:
                         # Execute the desired logic here
-                        violencePresent = violenceChecker.check_content(dictOfMessages[msgData.roomID])
-                        if violencePresent:
+                        categories : Dict = violenceChecker.check_content(dictOfMessages[msgData.roomID])
+                        if categories:
                             print("Violence detected")
-                            entityRoomDBHandler.updateViolence(msgData.roomID)
+                            entityRoomDBHandler.updateViolence(msgData.roomID, categories)
 
                         # Refresh data and update counter
                         dictOfMessages[msgData.roomID] = ''
@@ -107,7 +109,14 @@ def messageAnalyzer():
 
                 messagesInRoom = messagesDBHandler.readMessagesDataForRoom(msgData.roomID, msgData.qrcodeID)
                 messages: List[str] = messagesInRoom['data']
-                messages, ner_labels = text_Preprocessing.process(messages)
+                
+                # decrypt from MongoDB
+                decryptedMessages : List[str] = []
+                for m in messages:
+                    decryptedM = Crypto.decryptFun(m)
+                    decryptedMessages.append(decryptedM)
+                
+                messages, ner_labels = text_Preprocessing.process(decryptedMessages)
                 
                 # model topics for num of topics treshold
                 model_topics = topic_modeling.runModel(messages, numOfTopics)
@@ -137,7 +146,7 @@ def BlRoomAnalyzer():
     dbHandler = DBHandler(mongoUri)
     postgresDBHandler = PostgresDBHandler(postgresDB, postgresUser, postgresPass, postgresHost, postgresPort)
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
-    blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
+    #blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
     entityUserDBHandler : EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
     entityRoomDBHandler : EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler()
 
@@ -150,24 +159,45 @@ def BlRoomAnalyzer():
             if isinstance(data, RoomData):
                 # update data in mongoDB for topic modeling for all rooms matched by qrcodeID
                 if data.description:
-                    temp = ""
-                    for _ in range(topicDescTreshold):
-                        temp += data.description
-                    # temp = encrypt.encrypt(temp)
-                    messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, temp)
+                    # check if description contains html tags
+                    if "<p>" in data.description:
+                        match = re.search(r"<p>(.*)<span", data.description)
+                        if match:
+                            matched_text = match.group(1)
+                        temp = ""
+                        for _ in range(topicDescTreshold):
+                            temp += matched_text
+                    else:
+                        temp = ""
+                        for _ in range(topicDescTreshold):
+                            temp += data.description
+
+                    # encrypt data into MongoDB
+                    dataEncrypted = Crypto.encryptFun(temp)
+                    messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, dataEncrypted)
+
                 if data.roomName:
                     temp = ""
                     for _ in range(topicRoomNameTreshold):
                         temp += data.roomName
-                    # temp = encrypt.encrypt(temp)
-                    messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, temp)
+
+                    # encrypt data into MongoDB
+                    dataEncrypted = Crypto.encryptFun(temp)
+                    messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, dataEncrypted)
 
                 # read all rooms for qrcodeID
                 rooms : List[Dict] = messagesDBHandler.readMessagesDataForAllRooms(data.qrcodeID)
                 for room in rooms:
                     roomID = room['roomID']
                     messages: List[str] = room['data']
-                    messages, ner_labels = text_Preprocessing.process(messages)
+                    
+                    # decrypt from MongoDB
+                    decryptedMessages : List[str] = []
+                    for m in messages:
+                        decryptedM = Crypto.decryptFun(m)
+                        decryptedMessages.append(decryptedM)
+                    
+                    messages, ner_labels = text_Preprocessing.process(decryptedMessages)
 
                     # model topics for num of topics treshold
                     model_topics = topic_modeling.runModel(messages, numOfTopics)
@@ -181,13 +211,14 @@ def BlRoomAnalyzer():
 
 
             elif isinstance(data, BlacklistData):
-                if blacklistDBHandler.readBlacklistData(data.userID):
-                    blacklistDBHandler.updateBlacklistData(data.userID, data)
-                else:
-                    blacklistDBHandler.insertBlacklistData(data)
+                # if blacklistDBHandler.readBlacklistData(data.userID):
+                #     blacklistDBHandler.updateBlacklistData(data.userID, data)
+                # else:
+                #     blacklistDBHandler.insertBlacklistData(data)
 
-                blacklistData = blacklistDBHandler.readBlacklistData(data.userID)
-                messages, ner_labels = text_Preprocessing.process([blacklistData['notes']])
+                #blacklistData = blacklistDBHandler.readBlacklistData(data.userID)
+
+                messages, ner_labels = text_Preprocessing.process([data.notes])
                 model_topics = topic_modeling.runModel(messages, 1)
                 model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
                 entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)

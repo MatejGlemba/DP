@@ -22,11 +22,18 @@ class PostgresDBHandler:
                 weight REAL
             );
         """
+
         create_table_room_flags_query = """
             CREATE TABLE IF NOT EXISTS entity_model_room_flags (
                 id SERIAL PRIMARY KEY,
                 room_id VARCHAR(100) UNIQUE,
-                violence INTEGER
+                sexual INTEGER,
+                hate INTEGER,
+                violence INTEGER,
+                self_harm INTEGER,
+                sexual_minors INTEGER,
+                hate_threatening INTEGER,
+                violence_graphic INTEGER
             );
         """
         create_table_user_topics_query = """
@@ -92,7 +99,7 @@ class EntityRoomDBHandler:
 
         for topicNum, topicList in topics.items():
             for weight, word in topicList:
-                values.append((qrcodeID, roomID, topicNum+1, word, weight))
+                values.append((qrcodeID, roomID, int(topicNum)+1, word, weight))
 
         cursor.executemany("""
             INSERT INTO entity_model_room (qrcode_id, room_id, topic_num, word, weight) 
@@ -102,16 +109,67 @@ class EntityRoomDBHandler:
         self.__conn.commit()
         cursor.close()
         
-    def updateViolence(self, userID: str):
-        cursor = self.__conn.cursor()
+    # def updateViolence(self, userID: str):
+    #     cursor = self.__conn.cursor()
 
-        # Perform an upsert (insert or update)
+    #     # Perform an upsert (insert or update)
+    #     cursor.execute("""
+    #         INSERT INTO entity_model_room_flags (room_id, violence) 
+    #         VALUES (%s, %s) 
+    #         ON CONFLICT (room_id) DO UPDATE 
+    #         SET violence = entity_model_room_flags.violence + 1
+    #     """, (userID,1))
+
+    #     self.__conn.commit()
+    #     cursor.close()
+
+    def updateViolence(self, roomID: str, flags: Dict):
+        cursor = self.__conn.cursor()
+        
+        # Check if the row already exists in the table
         cursor.execute("""
-            INSERT INTO entity_model_room_flags (room_id, violence) 
-            VALUES (%s, %s) 
-            ON CONFLICT (room_id) DO UPDATE 
-            SET violence = entity_model_room_flags.violence + 1
-        """, (userID,1))
+            SELECT * FROM entity_model_room_flags 
+            WHERE room_id = %s
+        """, (roomID,))
+
+        row_count = cursor.fetchone()
+        
+        # prepare flags
+        insertValues = []
+        updateValues = []
+        flagValues = []
+        insertValues.append(roomID)
+        for _, value in flags.items():
+            valueB = bool(value)
+            if valueB:
+                flagValues.append(1)
+            else:
+                flagValues.append(0)    
+        insertValues.extend(flagValues)
+        updateValues.extend(flagValues)
+        updateValues.append(roomID)
+
+        # update
+        if row_count is not None:
+            cursor.execute("""
+                UPDATE entity_model_room_flags 
+                SET 
+                    sexual = sexual + %s, 
+                    hate = hate + %s, 
+                    violence = violence + %s, 
+                    self_harm = self_harm + %s, 
+                    sexual_minors = sexual_minors + %s, 
+                    hate_threatening = hate_threatening + %s, 
+                    violence_graphic = violence_graphic + %s 
+                WHERE 
+                    room_id = %s;
+            """, updateValues)
+        # insert
+        else:
+            cursor.execute("""
+                INSERT INTO entity_model_room_flags (room_id, sexual, hate, violence, self_harm, sexual_minors, hate_threatening, violence_graphic) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
+            """, insertValues)
 
         self.__conn.commit()
         cursor.close()
