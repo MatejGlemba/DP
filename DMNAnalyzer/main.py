@@ -113,6 +113,7 @@ def messageAnalyzer():
                 # decrypt from MongoDB
                 decryptedMessages : List[str] = []
                 for m in messages:
+                    #print("message to be decrypted", m)
                     decryptedM = Crypto.decryptFun(m)
                     decryptedMessages.append(decryptedM)
                 
@@ -146,7 +147,7 @@ def BlRoomAnalyzer():
     dbHandler = DBHandler(mongoUri)
     postgresDBHandler = PostgresDBHandler(postgresDB, postgresUser, postgresPass, postgresHost, postgresPort)
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
-    #blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
+    blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
     entityUserDBHandler : EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
     entityRoomDBHandler : EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler()
 
@@ -194,6 +195,7 @@ def BlRoomAnalyzer():
                     # decrypt from MongoDB
                     decryptedMessages : List[str] = []
                     for m in messages:
+                     #   print("message to be decrypted", m)
                         decryptedM = Crypto.decryptFun(m)
                         decryptedMessages.append(decryptedM)
                     
@@ -209,19 +211,28 @@ def BlRoomAnalyzer():
                 
                     entityRoomDBHandler.updateTopics(roomID, data.qrcodeID, model_topics, model_topics_overall)
 
-
             elif isinstance(data, BlacklistData):
-                # if blacklistDBHandler.readBlacklistData(data.userID):
-                #     blacklistDBHandler.updateBlacklistData(data.userID, data)
-                # else:
-                #     blacklistDBHandler.insertBlacklistData(data)
+                if blacklistDBHandler.readBlacklistData(data.userID):
+                    msgDataEncrypted = Crypto.encryptFun(data.notes)
+                    blacklistDBHandler.updateBlacklistData(data.userID, msgDataEncrypted)
+                else:
+                    msgDataEncrypted = Crypto.encryptFun(data.notes)
+                    blacklistDBHandler.insertBlacklistData(data.userID, msgDataEncrypted)
 
-                #blacklistData = blacklistDBHandler.readBlacklistData(data.userID)
+                blacklistData : List[str] = blacklistDBHandler.readBlacklistData(data.userID)
+                notes: List[str] = blacklistData['data']
 
-                messages, ner_labels = text_Preprocessing.process([data.notes])
+                # decrypt from MongoDB
+                decryptedMessages : List[str] = []
+                for note in notes:
+                    decryptedM = Crypto.decryptFun(note)
+                    decryptedMessages.append(decryptedM)
+
+                messages, ner_labels = text_Preprocessing.process(decryptedMessages)
                 model_topics = topic_modeling.runModel(messages, 1)
                 model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
                 entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
+
             else:
                 pass
 

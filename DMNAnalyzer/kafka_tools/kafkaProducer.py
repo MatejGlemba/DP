@@ -6,7 +6,7 @@ class KafkaProducer:
     def __init__(self, producer: Producer) -> None:
         self.__producer = producer
 
-    def acked(err, msg):
+    def acked(obj, err, msg):
         if err is not None:
             print("Failed to deliver message: %s: %s" % (str(msg), str(err)))
         else:

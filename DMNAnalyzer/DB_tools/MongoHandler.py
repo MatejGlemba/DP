@@ -23,12 +23,16 @@ class BlacklistDBHandler:
         return self.__collection
 
     # update data for specific room identified by qrcodeID(App)
-    def updateBlacklistData(self, userID: str, newData: BlacklistData):
-        self.__collection.update_one({'userID': userID}, {'$push' : {'data' : newData.__dict__}})
+    def updateBlacklistData(self, userID: str, notes: str):
+        self.__collection.update_one({'userID': userID}, {'$push' : {'data' : notes}})
         
     # first data insert for specific room identified by qrcodeID(App)
-    def insertBlacklistData(self, roomData: BlacklistData):
-        self.__collection.insert_one(roomData.__dict__)
+    def insertBlacklistData(self, userID: str, notes: str):
+        newRecord = {
+            "userID" : userID, 
+            "data" : [notes]
+        }
+        self.__collection.insert_one(newRecord)
 
     # find data for specific room identified by qrcodeID(App) -> just for check
     def readBlacklistData(self, userID: str):
