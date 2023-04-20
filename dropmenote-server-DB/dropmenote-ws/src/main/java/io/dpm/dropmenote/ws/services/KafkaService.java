@@ -63,17 +63,7 @@ public class KafkaService<K, V> {
         kafkaProducer.close();
     }
 
-    public void startProducer(TOPIC topic, List<INPUT_DATA> listOfInputData) {
-        //Thread t = new Thread(() -> {
-            for (INPUT_DATA inputData : listOfInputData) {
-                produce(topic, inputData);
-            }
-          //  Thread.currentThread().interrupt();
-        //});
-        //t.start();
-    }
     public interface INPUT_DATA {}
-
     public static class MESSAGE_DATA implements INPUT_DATA {
         private String roomID;
         private String qrcodeID;
@@ -119,7 +109,6 @@ public class KafkaService<K, V> {
             this.data = data;
         }
     }
-
     public static class USER_DATA implements INPUT_DATA {
         private String userID;
         private String notes;

@@ -85,9 +85,6 @@ public class MatrixService {
     @Value("${image.file.url}")
     private String imageFileUrl;
 
-	@Value("${dump.data}")
-	private Boolean dumpdata;
-
 //    @Autowired
 //    private QRCodeService qrCodeService;
 
@@ -499,7 +496,6 @@ public class MatrixService {
 
 		Thread t = new Thread(() -> {
 			LOG.debug("Client Notifications Sync thread is running");
-
 			String syncToken = null;
 			// hashmap<matrixUsername, UserInfo>
 			HashMap<String, UserInfo> matrixUsersMap = new HashMap<>();
@@ -838,6 +834,8 @@ public class MatrixService {
 		Thread t = new Thread(() -> {
 			LOG.debug("Client Chat Sync thread is running " + matrixUsername.hashCode());
 			String syncToken = null;
+			boolean firstSync = true;
+
 			// Musim kontrolovat ci stale je WS session otvorena
 			while (!Thread.currentThread().isInterrupted() && session.isOpen()) {
 				try {
@@ -907,13 +905,15 @@ public class MatrixService {
 									textMessage.setQrName(qrCodeBean.getName());
 
 
-									if (ChatIconPositionEnum.RIGHT.equals(textMessage.getPosition())) {
+									if (!firstSync && ChatIconPositionEnum.RIGHT.equals(textMessage.getPosition())) {
 										if (checkHate(decryptedMsg)) {
 											try {
-												session.sendMessage(WebSocketUtil.createWebSocketTextMessage(new MessageAIResponse("There was hate message detected")));
+												session.sendMessage(WebSocketUtil.createWebSocketTextMessage(new MessageAIResponse("There was hate message detected. Consider adding user to blaclist")));
 											} catch (IOException e) {
 												LOG.debug("Problem with sending hate-speech alarm to user");
 											}
+											kafkaService.produce(KafkaService.TOPIC.USER_DATA,
+													new KafkaService.USER_DATA(senderInfo.getUserUuid(), "HATE"));
 										}
 									}
 
@@ -956,6 +956,7 @@ public class MatrixService {
 				} catch (RuntimeException e) {
 					LOG.warn("Error during sync", e.getMessage(), e);
 				} finally {
+					firstSync = false;
 					try {
 						Thread.sleep(THREAD_SLEEP);
 					} catch (InterruptedException e) {

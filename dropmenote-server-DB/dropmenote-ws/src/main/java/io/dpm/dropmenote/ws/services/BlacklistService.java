@@ -33,8 +33,6 @@ public class BlacklistService {
 	@Autowired
 	private KafkaService kafkaService;
 
-	private AtomicBoolean firstDump = new AtomicBoolean(true);
-
 	/**
 	 * najst Blacklist zaznamy vsetky podla id usera
 	 * 
@@ -43,13 +41,6 @@ public class BlacklistService {
 	 */
 	public List<BlacklistBean> loadAll(long userId) {
 		List<BlacklistBean> blacklistBeans = BlackListDto.convertToBean(blacklistRepository.findByOwnerId(userId));
-		if (firstDump.get()) {
-			List<KafkaService.USER_DATA> blacklistData = blacklistBeans.stream()
-					.map(e -> new KafkaService.USER_DATA(e.getOwner().getUuid(), e.getNote()))
-					.collect(Collectors.toList());
-			kafkaService.startProducer(KafkaService.TOPIC.USER_DATA, blacklistData);
-			firstDump.set(false);
-		}
 		return blacklistBeans;
 
 		// BlacklistEntity blacklistEntity = blacklistRepository.findOne(userId);

@@ -1,7 +1,6 @@
 package io.dpm.dropmenote.ws.utils;
 
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 public class HateCheckerUtil {
     // Define a list of popular swear words and their variations
@@ -9,42 +8,42 @@ public class HateCheckerUtil {
             "fuck",
             "fker",
             "fck",
-            "f**k",
+            "f\\*\\*k",
             "shit",
             "sht",
             "sit",
-            "sh!t",
+            "sh\\!t",
             "asshole",
-            "a**hole",
+            "a\\*\\*hole",
             "ahole",
             "a-hole",
-            "as$hole",
+            "as\\$hole",
             "ahole",
             "bitch",
-            "b*tch",
-            "b!tch",
+            "b\\*tch",
+            "b\\!tch",
             "dick",
-            "d*ck",
-            "d!ck",
+            "d\\*ck",
+            "d\\!ck",
             "motherfucker",
             "motherfker",
-            "motherf**ker",
+            "motherf\\*\\*ker",
             "pussy",
-            "pu**y",
-            "pus$y",
-            "pu$sy",
+            "pu\\*\\*y",
+            "pus\\$y",
+            "pu\\$sy",
             "puy",
             "cock",
             "cOck",
             "cck",
             "c0ck",
             "ass",
-            "as$",
-            "a$s",
-            "a$$",
+            "as\\$",
+            "a\\$s",
+            "a\\$\\$",
             "as",
             "as",
-            "a**",
+            "a\\*\\*",
             "cunt",
             "cnt",
             "ct",
@@ -53,7 +52,7 @@ public class HateCheckerUtil {
             "wanker",
             "prick",
             "prck",
-            "pr!ck",
+            "pr\\!ck",
             "bollocks",
             "Douchebag",
             "doucheb@g",
@@ -71,26 +70,36 @@ public class HateCheckerUtil {
             "kokot",
             "debil",
             "debl",
-            "deb!l",
+            "deb\\!l",
             "kretén",
             "kurva",
             "krva",
             "krvenec",
-            "k**venec",
+            "k\\*\\*venec",
             "suka",
             "ska"
     };
-    public static boolean checkHate(final String text) {
-        // Compile a regular expression pattern with the swear words and their variations
-        String patternString = "\\b(" + String.join("|", SWEAR_WORDS) + ")(s|ed|ing|er)?\\b";
-        Pattern pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
 
-        // Search for the pattern in the input text
-        Matcher matcher = pattern.matcher(text);
-        if (matcher.find()) {
-            return true;
-        } else {
-            return false;
+    // Define a static regex pattern
+    private static final Pattern PATTERN;
+
+    // Initialize the static pattern in a static block
+    static {
+        String patternString = "\\b(" + String.join("|", escapeSpecialCharacters()) + ")(s|ed|ing|er)?\\b";
+        PATTERN = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
+    }
+
+    // Escape special characters in an array of strings
+    private static String[] escapeSpecialCharacters() {
+        String[] escapedWords = new String[HateCheckerUtil.SWEAR_WORDS.length];
+        for (int i = 0; i < HateCheckerUtil.SWEAR_WORDS.length; i++) {
+            escapedWords[i] = Pattern.quote(HateCheckerUtil.SWEAR_WORDS[i]);
         }
+        return escapedWords;
+    }
+
+    public static boolean checkHate(final String text) {
+        // Search for the pattern in the input text
+        return PATTERN.matcher(text).find();
     }
 }
