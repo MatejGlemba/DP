@@ -8,7 +8,7 @@ from utils.crypto import Crypto
 
 def process1():
     #UC1_1
-    handler = KafkaHandler.RoomDataAndBlacklistTopicHandler('localhost:9094')
+    handler = KafkaHandler.RoomAndUserDataTopicHandler('localhost:9094')
     with open('demo_data/DemoRoomUC1_1.csv', mode="r") as f:
         csv_reader = csv.reader(f, delimiter='|')
         header_row = next(csv_reader)
@@ -45,7 +45,7 @@ def process1():
         messageTopicHandler.flush()
     
     #UC1_3
-    handler = KafkaHandler.RoomDataAndBlacklistTopicHandler('localhost:9094')
+    handler = KafkaHandler.RoomAndUserDataTopicHandler('localhost:9094')
     with open('demo_data/DemoRoomUC1_3.csv', mode="r") as f:
         csv_reader = csv.reader(f, delimiter='|')
         header_row = next(csv_reader)

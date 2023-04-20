@@ -1,7 +1,7 @@
 from multiprocessing import Process
 from time import sleep
 from kafka_tools import KafkaHandler
-from kafka_tools.serializers import BlacklistData, MessageData
+from kafka_tools.serializers import UserData, MessageData
 import csv
 
 def process1():
@@ -25,7 +25,7 @@ def process1():
         messageTopicHandler.flush()
 
     #UC1_2
-    blacklistDataTopicHandler = KafkaHandler.RoomDataAndBlacklistTopicHandler('localhost:9094')
+    UserDataTopicHandler = KafkaHandler.RoomAndUserDataTopicHandler('localhost:9094')
     with open('demo_data/DemoUserUC1_2.csv', mode="r") as f:
         csv_reader = csv.reader(f, delimiter='|')
         header_row = next(csv_reader)
@@ -40,8 +40,8 @@ def process1():
                 row_dict[header_row[i]] = row[i]
             print(row_dict)
             sleep(2)
-            blacklistDataTopicHandler.produce(BlacklistData(row_dict['userID'], row_dict['notes']))
-        blacklistDataTopicHandler.flush()
+            UserDataTopicHandler.produce(UserData(row_dict['userID'], row_dict['notes']))
+        UserDataTopicHandler.flush()
 
     #UC1_3
     messageTopicHandler = KafkaHandler.MessageTopicHandler('localhost:9094')

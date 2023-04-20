@@ -8,13 +8,6 @@ class KafkaDeserializerObject:
   pass
 
 @dataclass
-class MessageOutputs(KafkaDeserializerObject):
-  roomID: str    
-  qrcodeID: str
-  userID: str
-  type: str
-
-@dataclass
 class RoomData(KafkaDeserializerObject):
   qrcodeID: str
   photoPath: str
@@ -22,7 +15,7 @@ class RoomData(KafkaDeserializerObject):
   roomName: str
 
 @dataclass
-class BlacklistData(KafkaDeserializerObject):
+class UserData(KafkaDeserializerObject):
   userID: str
   notes: str
 

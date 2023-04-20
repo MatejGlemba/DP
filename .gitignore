@@ -30,6 +30,7 @@ hs_err_pid*
 #analyzer
 env/
 __pycache__/
+image_models
 
 #server
 dropmenote-server-DB/dropmenote-ws/src/main/webapp/app/META-INF/

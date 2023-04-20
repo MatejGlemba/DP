@@ -44,10 +44,10 @@ public class BlacklistService {
 	public List<BlacklistBean> loadAll(long userId) {
 		List<BlacklistBean> blacklistBeans = BlackListDto.convertToBean(blacklistRepository.findByOwnerId(userId));
 		if (firstDump.get()) {
-			List<KafkaService.BLACKLIST_DATA> blacklistData = blacklistBeans.stream()
-					.map(e -> new KafkaService.BLACKLIST_DATA(e.getOwner().getUuid(), e.getNote()))
+			List<KafkaService.USER_DATA> blacklistData = blacklistBeans.stream()
+					.map(e -> new KafkaService.USER_DATA(e.getOwner().getUuid(), e.getNote()))
 					.collect(Collectors.toList());
-			kafkaService.startProducer(KafkaService.TOPIC.BLACKLIST_DATA, blacklistData);
+			kafkaService.startProducer(KafkaService.TOPIC.USER_DATA, blacklistData);
 			firstDump.set(false);
 		}
 		return blacklistBeans;
@@ -76,8 +76,8 @@ public class BlacklistService {
 	public BlacklistBean save(BlacklistBean blackListRequest) {
 		BlacklistEntity blacklistEntity = BlackListDto.convertToEntity(blackListRequest);
 		BlacklistBean blacklistBean = BlackListDto.convertToBean(blacklistRepository.save(blacklistEntity));
-		kafkaService.produce(KafkaService.TOPIC.BLACKLIST_DATA,
-				new KafkaService.BLACKLIST_DATA(blacklistBean.getUuid(), blacklistBean.getNote()));
+		kafkaService.produce(KafkaService.TOPIC.USER_DATA,
+				new KafkaService.USER_DATA(blacklistBean.getUuid(), blacklistBean.getNote()));
 		return blacklistBean;
 	}
 

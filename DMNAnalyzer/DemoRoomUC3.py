@@ -24,7 +24,7 @@ def process1():
         messageTopicHandler.flush()
 
 def process2():
-    handler = KafkaHandler.RoomDataAndBlacklistTopicHandler('localhost:9094')
+    handler = KafkaHandler.RoomAndUserDataTopicHandler('localhost:9094')
     with open('demo_data/DemoRoomUC3_2.csv', mode="r") as f:
         csv_reader = csv.reader(f, delimiter='|')
         header_row = next(csv_reader)

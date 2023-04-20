@@ -21,25 +21,31 @@ class KafkaConsumer:
     def consume(self, dataClass=deserializers.KafkaDeserializerObject) -> Message:
         msg = self.__consumer.poll(timeout=self.__poll_timeout)
         if msg:
-            msg = msg.value()
-            #print(msg)
-            return deserializers.deserialize(jsonValue=msg, dataClass=dataClass)
+            if msg.error():
+                print("Error while consuming message :", msg.error())
+            else:
+                msg = msg.value()
+                #print(msg)
+                return deserializers.deserialize(jsonValue=msg, dataClass=dataClass)
         
     def consumeMore(self) -> Message:
         msg = self.__consumer.poll(timeout=self.__poll_timeout)
         if msg:
-            msg = msg.value()
-            msgDict = eval(msg)
-            print(msgDict)
-            if 'notes' in msgDict.keys():
-                # Blacklist data
-                return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.BlacklistData)
-            elif 'description' in msgDict.keys():
-                # Room data
-                return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.RoomData)
+            if msg.error():
+                print("Error while consuming message :", msg.error())
             else:
-                # Message Data
-                return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.MessageData)
+                msg = msg.value()
+                msgDict = eval(msg)
+               # print(msgDict)
+                if 'notes' in msgDict.keys():
+                    # Blacklist data
+                    return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.UserData)
+                elif 'description' in msgDict.keys():
+                    # Room data
+                    return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.RoomData)
+                else:
+                    # Message Data
+                    return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.MessageData)
     
     def commit(self):
         self.__consumer.commit(asynchronous=True)

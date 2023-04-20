@@ -1,6 +1,5 @@
 from typing import List
 import re
-from wordcloud import WordCloud
 import gensim
 from gensim.utils import simple_preprocess
 import nltk
@@ -10,8 +9,6 @@ nltk.download('averaged_perceptron_tagger')
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
-from pprint import pprint
-import matplotlib.pyplot as plt
 import en_core_web_sm
 
 stop_words = stopwords.words('english')
@@ -31,7 +28,6 @@ def clean(df: pd.DataFrame):
     df['text'].map(lambda x: x.lower())
     return df
 
-
 def nltk_pos_tagger(nltk_tag):
     if nltk_tag.startswith('J'):
         return wordnet.ADJ
@@ -44,35 +40,14 @@ def nltk_pos_tagger(nltk_tag):
     else:          
         return wordnet.NOUN
 
-# def lemmatizer(string):
-#     word_pos_tags = nltk.pos_tag(word_tokenize(string)) # Get position tags
-#     a=[wl.lemmatize(tag[0], get_wordnet_pos(tag[1])) for idx, tag in enumerate(word_pos_tags)] # Map the position tag and lemmatize the word/token
-#     return " ".join(a)
-
 def ner(data):
     nlp = en_core_web_sm.load()
     nlp.get_pipe('ner').labels
     doc = nlp(data)
-    #print("NER")
-    #print([(X.text, X.label_) for X in doc.ents])
     return [(X.text, X.label_) for X in doc.ents]
 
-def eda(df: pd.DataFrame):
-    long_string = ','.join(list(df['text'].values))
-   # print("LONG STRING EDA", long_string)
-    # wordcloud = WordCloud(background_color="white", max_words=1000, contour_width=3, contour_color='steelblue')
-    # wc = wordcloud.generate(long_string)
-    
-    
-
-
-    # plt.figure()
-    # plt.imshow(wc, interpolation='bilinear')
-    # plt.axis("off")
-    # plt.savefig('foo.png')
-
-    return ner(long_string)
-
+def get_ner_labels(df: pd.DataFrame):
+    return ner(','.join(list(df['text'].values)))
 
 def lemmatize(words, wl:WordNetLemmatizer):
     nltk_tagged = nltk.pos_tag(words)  
@@ -89,29 +64,15 @@ def lemmatize(words, wl:WordNetLemmatizer):
 
 def preprocess(data_words):
     data_words = remove_stopwords(data_words)
-   # print("DATA WORDS without stopwords", data_words)
-    #st = PorterStemmer()
-    #data_words = [[st.stem(word) for word in words ] for words in data_words]
-    #print("DATA WORDS after stemming", data_words)
     wl = WordNetLemmatizer()
-    #print("\n")
     data_words = [lemmatize(words, wl) for words in data_words]
-    
-    #data_words_POS = [[nltk.pos_tag(word) for word in words ] for words in data_words]
-    #data_words_wordnet_POS = map(lambda x: (x[0], nltk_pos_tagger(x[1])), data_words_POS)
-    #data_words = [[wl.lemmatize(word) for word in words ] for words in data_words]
-    #print("DATA WORDS after lemmatizing", data_words)
     return data_words
 
-    
 def process(m: List[str]):
     df = pd.DataFrame(m, columns =['text'])
     df = clean(df)
-    ner_labels = eda(df)
+    ner_labels = get_ner_labels(df)
     data = df['text'].values.tolist()
     data_words = list(sent_to_words(data))
-    #print("DATA WORDS before preprocessing", data_words)
     data_words = preprocess(data_words)
-    #print("DATA WORDS after preprocessing", data_words)
     return data_words, ner_labels
-

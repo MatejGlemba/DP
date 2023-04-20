@@ -3,10 +3,10 @@ import re
 import time
 from typing import Dict, List, Tuple
 from kafka_tools import KafkaHandler
-from kafka_tools.deserializers import MessageData, BlacklistData, MessageOutputs, RoomData
+from kafka_tools.deserializers import MessageData, UserData, RoomData
 from utils.crypto import Crypto
 from utils.messagesCounter import Counter
-from ai_tools import hatespeechChecker, violenceChecker, text_Preprocessing, topic_modeling
+from ai_tools import violenceChecker, text_Preprocessing, topic_modeling, image_processing
 from DB_tools.MongoHandler import DBHandler, MessagesDBHandler, BlacklistDBHandler
 from DB_tools.PostgreSQLHandler import PostgresDBHandler, EntityRoomDBHandler, EntityUserDBHandler
 from configparser import ConfigParser
@@ -16,7 +16,7 @@ def readConfig():
   config = ConfigParser()
   config.read('config.ini')
 
-def messageAnalyzer():
+def MessageAnalyzer():
     # configs
     violenceCheckerOn = config.getboolean('analyzer', 'violence_checker_on')
     messagesTreshold = config.getint('analyzer', 'messages_treshold')
@@ -32,12 +32,10 @@ def messageAnalyzer():
 
     # initializers
     messageTopicHandler = KafkaHandler.MessageTopicHandler(kafkaUri)
-    messageOutputHandler = KafkaHandler.MessageOutputsTopicHandler(kafkaUri)
     dbHandler = DBHandler(mongoUri)
     postgresDBHandler = PostgresDBHandler(postgresDB, postgresUser, postgresPass, postgresHost, postgresPort)
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     entityRoomDBHandler: EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler() 
-    entityUserDBHandler: EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
     counter : Counter = Counter()
 
     # violence checker fields
@@ -63,13 +61,6 @@ def messageAnalyzer():
                 msgDataEncrypted = Crypto.encryptFun(msgData.data)
                 messagesDBHandler.insertMessageData(msgData.roomID, msgData.qrcodeID, msgDataEncrypted)
             
-            # check hate speech, notify app server, save user data 
-            if hatespeechChecker.checkHate(msgData.data):
-                entityUserDBHandler.updateHateSpeech(msgData.userID)
-                output = MessageOutputs(msgData.roomID,msgData.qrcodeID,msgData.userID, "HATE")
-                print("produce :", output.__dict__)
-                #messageOutputHandler.produce(output)
-
             # check violation
             if violenceCheckerOn:
                 # save data for violence checking
@@ -129,7 +120,7 @@ def messageAnalyzer():
 
                 entityRoomDBHandler.updateTopics(msgData.roomID, msgData.qrcodeID, model_topics, model_topics_overall)  
                 
-def BlRoomAnalyzer():
+def UserRoomAnalyzer():
     # configs
     topicDescTreshold = config.getint('analyzer', 'topic_description_treshold')
     topicRoomNameTreshold = config.getint('analyzer', 'topic_room_name_treshold')
@@ -143,7 +134,7 @@ def BlRoomAnalyzer():
     mongoUri = config.get('mongoDB', 'mongo_uri')
 
     # initializers
-    roomDataHandler = KafkaHandler.RoomDataAndBlacklistTopicHandler(kafkaUri)
+    roomDataHandler = KafkaHandler.RoomAndUserDataTopicHandler(kafkaUri)
     dbHandler = DBHandler(mongoUri)
     postgresDBHandler = PostgresDBHandler(postgresDB, postgresUser, postgresPass, postgresHost, postgresPort)
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
@@ -186,6 +177,16 @@ def BlRoomAnalyzer():
                     dataEncrypted = Crypto.encryptFun(temp)
                     messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, dataEncrypted)
 
+                if data.photoPath:
+                    detectedObjects = image_processing.processImage(data.photoPath)
+                    temp = ""
+                    for _ in range(topicDescTreshold):
+                        for detectedObject in detectedObjects:
+                            temp += detectedObject
+                    # encrypt data into MongoDB
+                    dataEncrypted = Crypto.encryptFun(temp)
+                    messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, dataEncrypted)
+                
                 # read all rooms for qrcodeID
                 rooms : List[Dict] = messagesDBHandler.readMessagesDataForAllRooms(data.qrcodeID)
                 for room in rooms:
@@ -211,37 +212,39 @@ def BlRoomAnalyzer():
                 
                     entityRoomDBHandler.updateTopics(roomID, data.qrcodeID, model_topics, model_topics_overall)
 
-            elif isinstance(data, BlacklistData):
-                if blacklistDBHandler.readBlacklistData(data.userID):
-                    msgDataEncrypted = Crypto.encryptFun(data.notes)
-                    blacklistDBHandler.updateBlacklistData(data.userID, msgDataEncrypted)
+            elif isinstance(data, UserData):
+                if data.notes == "HATE":
+                    entityUserDBHandler.updateHateSpeech(data.userID)
                 else:
-                    msgDataEncrypted = Crypto.encryptFun(data.notes)
-                    blacklistDBHandler.insertBlacklistData(data.userID, msgDataEncrypted)
+                    if blacklistDBHandler.readUserData(data.userID):
+                        msgDataEncrypted = Crypto.encryptFun(data.notes)
+                        blacklistDBHandler.updateUserData(data.userID, msgDataEncrypted)
+                    else:
+                        msgDataEncrypted = Crypto.encryptFun(data.notes)
+                        blacklistDBHandler.insertUserData(data.userID, msgDataEncrypted)
 
-                blacklistData : List[str] = blacklistDBHandler.readBlacklistData(data.userID)
-                notes: List[str] = blacklistData['data']
+                    userData : List[str] = blacklistDBHandler.readUserData(data.userID)
+                    notes: List[str] = userData['data']
 
-                # decrypt from MongoDB
-                decryptedMessages : List[str] = []
-                for note in notes:
-                    decryptedM = Crypto.decryptFun(note)
-                    decryptedMessages.append(decryptedM)
+                    # decrypt from MongoDB
+                    decryptedMessages : List[str] = []
+                    for note in notes:
+                        decryptedM = Crypto.decryptFun(note)
+                        decryptedMessages.append(decryptedM)
 
-                messages, ner_labels = text_Preprocessing.process(decryptedMessages)
-                model_topics = topic_modeling.runModel(messages, 1)
-                model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
-                entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
-
+                    messages, ner_labels = text_Preprocessing.process(decryptedMessages)
+                    model_topics = topic_modeling.runModel(messages, 1)
+                    model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
+                    entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
             else:
                 pass
 
 
 if __name__ == "__main__":
     readConfig()
-    p1 = Process(target=BlRoomAnalyzer)
+    p1 = Process(target=UserRoomAnalyzer)
     p1.start()
-    p2 = Process(target=messageAnalyzer)
+    p2 = Process(target=MessageAnalyzer)
     p2.start()
     p1.join()
     p2.join()

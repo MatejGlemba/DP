@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from pymongo import MongoClient
 from pymongo.collection import Collection
-from kafka_tools.deserializers import MessageData, BlacklistData
+from kafka_tools.deserializers import MessageData, UserData
 
 class DBHandler:
     def __init__(self, uri : str) -> None:
@@ -23,11 +23,11 @@ class BlacklistDBHandler:
         return self.__collection
 
     # update data for specific room identified by qrcodeID(App)
-    def updateBlacklistData(self, userID: str, notes: str):
+    def updateUserData(self, userID: str, notes: str):
         self.__collection.update_one({'userID': userID}, {'$push' : {'data' : notes}})
         
     # first data insert for specific room identified by qrcodeID(App)
-    def insertBlacklistData(self, userID: str, notes: str):
+    def insertUserData(self, userID: str, notes: str):
         newRecord = {
             "userID" : userID, 
             "data" : [notes]
@@ -35,7 +35,7 @@ class BlacklistDBHandler:
         self.__collection.insert_one(newRecord)
 
     # find data for specific room identified by qrcodeID(App) -> just for check
-    def readBlacklistData(self, userID: str):
+    def readUserData(self, userID: str):
         return self.__collection.find_one({'userID': userID}) 
       
 class MessagesDBHandler:
