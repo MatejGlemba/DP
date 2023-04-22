@@ -145,6 +145,7 @@
         password varchar(255) not null,
         photo varchar(255),
         push_notification boolean not null,
+        dmn_ai boolean not null,
         recovery_token varchar(255),
         recovery_token_created timestamp,
         uuid varchar(255) not null,

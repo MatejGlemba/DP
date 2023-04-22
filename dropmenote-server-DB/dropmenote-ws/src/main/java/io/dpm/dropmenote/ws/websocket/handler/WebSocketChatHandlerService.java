@@ -216,19 +216,22 @@ public class WebSocketChatHandlerService {
 			}
 		}).start();
 
-		// poslat novu spravu do kafky
-		new Thread(() -> {
-			/*
-			 * request.getMessage()			: data
-			 * userBean.getUuid()			: user_id
-			 * loginRequest.getRoomId()		: room_id
-			 * loginRequest.getQrCodeUiid()	: qrcode_id
-			 * */
-			var qrCodeUUID = matrixService.getQrCodeUuidByMatrixRoomId(sessionInfo.getMatrixRoomId());
-			KafkaService.INPUT_DATA inputData = new KafkaService.MESSAGE_DATA(sessionInfo.getMatrixRoomId(),
-					qrCodeUUID, userBean.getUuid(), request.getMessage());
-			kafkaService.produce(KafkaService.TOPIC.MESSAGE_DATA, inputData);
-		}).start();
+		// check if user has dmnAI turned on
+		if (userBean.isDmnAI()) {
+			// poslat novu spravu do kafky
+			new Thread(() -> {
+				/*
+				 * request.getMessage()			: data
+				 * userBean.getUuid()			: user_id
+				 * loginRequest.getRoomId()		: room_id
+				 * loginRequest.getQrCodeUiid()	: qrcode_id
+				 * */
+				var qrCodeUUID = matrixService.getQrCodeUuidByMatrixRoomId(sessionInfo.getMatrixRoomId());
+				KafkaService.INPUT_DATA inputData = new KafkaService.MESSAGE_DATA(sessionInfo.getMatrixRoomId(),
+						qrCodeUUID, userBean.getUuid(), request.getMessage());
+				kafkaService.produce(KafkaService.TOPIC.MESSAGE_DATA, inputData);
+			}).start();
+		}
 
 		String encryptedMsg = AESCipher.encrypt(CRYPTING_KEY, request.getMessage()).getData();
 		room.sendText(encryptedMsg);

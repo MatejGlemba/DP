@@ -77,6 +77,9 @@ public class UserEntity extends AbstractEntity implements Serializable {
 	@Column(name = "email_notification", nullable = false)
 	private boolean emailNotification;
 
+	@Column(name = "dmn_ai", nullable = false)
+	private boolean dmnAI;
+
 	@Column(name = "recovery_token", nullable = true)
 	private String recoveryToken;
 

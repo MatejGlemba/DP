@@ -18,5 +18,6 @@ public class UserBeanResponse {
 	private ProfileIconEnum chatIcon;
 	private boolean pushNotification;
 	private boolean emailNotification;
+	private boolean dmnAI;
 
 }

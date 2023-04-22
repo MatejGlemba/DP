@@ -304,6 +304,26 @@
                     </div>
                 </div>
 
+                <div class="saveqrcode-setting">
+                    <div class="navigation-group-icn-image">
+                        <img src="app/assets/img/save_qrcode/ai-icon.svg" height="30px" width="30px">
+                    </div>
+                    <div class="navigation-group-icn-text">
+                        <label class="saveqrcode-label saveqrcode-setting-label">DMN AI</label>
+                        <br>
+                        <span class="filed-description filed-description-dark">
+                            Be notified if hate-speech detected
+                        </span>
+                    </div>
+                    <div class="navigation-group-icn-right">
+                        <ui-switch class="ng-pristine ng-untouched ng-valid ng-isolate-scope switch switch-transition-enabled ng-empty"
+                                   ng-model="user.dmnAI" ng-change="click_saveuser_submit(user);">
+                            <div class="switch-handle"></div>
+                            <div class="switch-handle"></div>
+                        </ui-switch>
+                    </div>
+                </div>
+
                 <div class="saveqrcode-setting saveqrcode-setting-enableqr" ng-click="click_logout()">
                     <div class="navigation-group-icn-image">
                         <img src="app/assets/img/settings/logout.svg" height="30px" width="30px"/>

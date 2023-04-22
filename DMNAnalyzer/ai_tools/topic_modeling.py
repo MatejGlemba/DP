@@ -4,7 +4,8 @@ import gensim.corpora as corpora
 import gensim
 
 def train(corpus, id2word, num_topics):
-    lda_model = gensim.models.LdaMulticore(corpus=corpus, id2word=id2word, num_topics=num_topics)
+    lda_model = gensim.models.LdaMulticore(corpus=corpus, id2word=id2word, num_topics=num_topics, alpha=)
+    lda_model.get_document_topics()
     return lda_model.print_topics()
 
 def runModel(data_words, num_topics=10):    

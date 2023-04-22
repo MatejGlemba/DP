@@ -1,5 +1,5 @@
 import psycopg2
-from DB_tools.PostgreSQLHandler import EntityRoomDBHandler, EntityUserDBHandler, PostgresDBHandler
+from db_tools.PostgreSQLHandler import EntityRoomDBHandler, EntityUserDBHandler, PostgresDBHandler
 
 entityModelRoom = 'entity_model_room'
 entityModelRoomFlags = 'entity_model_room_flags'

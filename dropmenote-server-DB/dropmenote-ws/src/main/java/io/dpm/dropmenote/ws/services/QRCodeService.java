@@ -138,10 +138,12 @@ public class QRCodeService {
 		}
 
 		QRCodeBean codeBean = QRCodeDto.convertToBean(qrCodeRepository.save(qrCodeEntity));
-		kafkaService.produce(KafkaService.TOPIC.ROOM_DATA, new KafkaService.ROOM_DATA(codeBean.getUuid(),
-				codeBean.getPhoto() == null ? "" : codeBean.getPhoto(),
-				codeBean.getDescription() == null ? "" : codeBean.getDescription(),
-				codeBean.getName() == null ? "" : codeBean.getName()));
+		if (codeBean.getOwner().isDmnAI()) {
+			kafkaService.produce(KafkaService.TOPIC.ROOM_DATA, new KafkaService.ROOM_DATA(codeBean.getUuid(),
+					codeBean.getPhoto() == null ? "" : codeBean.getPhoto(),
+					codeBean.getDescription() == null ? "" : codeBean.getDescription(),
+					codeBean.getName() == null ? "" : codeBean.getName()));
+		}
 		return codeBean;
 	}
 

@@ -29,6 +29,7 @@ public class UserBean extends AbstractBean {
 	private String photo;
 	private boolean pushNotification;
 	private boolean emailNotification;
+	private boolean dmnAI;
 	private String recoveryToken;
 	private String matrixUsername;
 	private String matrixPassword;

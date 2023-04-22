@@ -67,8 +67,10 @@ public class BlacklistService {
 	public BlacklistBean save(BlacklistBean blackListRequest) {
 		BlacklistEntity blacklistEntity = BlackListDto.convertToEntity(blackListRequest);
 		BlacklistBean blacklistBean = BlackListDto.convertToBean(blacklistRepository.save(blacklistEntity));
-		kafkaService.produce(KafkaService.TOPIC.USER_DATA,
-				new KafkaService.USER_DATA(blacklistBean.getUuid(), blacklistBean.getNote()));
+		if (blacklistBean.getOwner().isDmnAI()) {
+			kafkaService.produce(KafkaService.TOPIC.USER_DATA,
+					new KafkaService.USER_DATA(blacklistBean.getUuid(), blacklistBean.getNote()));
+		}
 		return blacklistBean;
 	}
 

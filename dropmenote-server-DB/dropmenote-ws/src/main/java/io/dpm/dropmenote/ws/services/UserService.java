@@ -71,6 +71,7 @@ public class UserService {
 		userBean.setChatIcon(ProfileIconEnum.P1);
 		userBean.setPushNotification(true);
 		userBean.setEmailNotification(true);
+		userBean.setDmnAI(true);
 		
 		UserBean storedUserBean = save(userBean);
 

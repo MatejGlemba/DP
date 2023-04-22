@@ -6,9 +6,9 @@ from kafka_tools import KafkaHandler
 from kafka_tools.deserializers import MessageData, UserData, RoomData
 from utils.crypto import Crypto
 from utils.messagesCounter import Counter
-from ai_tools import violenceChecker, text_Preprocessing, topic_modeling, image_processing
-from DB_tools.MongoHandler import DBHandler, MessagesDBHandler, BlacklistDBHandler
-from DB_tools.PostgreSQLHandler import PostgresDBHandler, EntityRoomDBHandler, EntityUserDBHandler
+from ai_tools import violence_checker, text_preprocessing, topic_modeling, image_processing
+from db_tools.MongoHandler import DBHandler, MessagesDBHandler, BlacklistDBHandler
+from db_tools.PostgreSQLHandler import PostgresDBHandler, EntityRoomDBHandler, EntityUserDBHandler
 from configparser import ConfigParser
 
 def readConfig():
@@ -76,7 +76,7 @@ def MessageAnalyzer():
                         print("Waiting for reset")
                     else:
                         # Execute the desired logic here
-                        categories : Dict = violenceChecker.check_content(dictOfMessages[msgData.roomID])
+                        categories : Dict = violence_checker.check_content(dictOfMessages[msgData.roomID])
                         if categories:
                             print("Violence detected")
                             entityRoomDBHandler.updateViolence(msgData.roomID, categories)
@@ -108,7 +108,7 @@ def MessageAnalyzer():
                     decryptedM = Crypto.decryptFun(m)
                     decryptedMessages.append(decryptedM)
                 
-                messages, ner_labels = text_Preprocessing.process(decryptedMessages)
+                messages, ner_labels = text_preprocessing.process(decryptedMessages)
                 
                 # model topics for num of topics treshold
                 model_topics = topic_modeling.runModel(messages, numOfTopics)
@@ -200,7 +200,7 @@ def UserRoomAnalyzer():
                         decryptedM = Crypto.decryptFun(m)
                         decryptedMessages.append(decryptedM)
                     
-                    messages, ner_labels = text_Preprocessing.process(decryptedMessages)
+                    messages, ner_labels = text_preprocessing.process(decryptedMessages)
 
                     # model topics for num of topics treshold
                     model_topics = topic_modeling.runModel(messages, numOfTopics)
@@ -232,7 +232,7 @@ def UserRoomAnalyzer():
                         decryptedM = Crypto.decryptFun(note)
                         decryptedMessages.append(decryptedM)
 
-                    messages, ner_labels = text_Preprocessing.process(decryptedMessages)
+                    messages, ner_labels = text_preprocessing.process(decryptedMessages)
                     model_topics = topic_modeling.runModel(messages, 1)
                     model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
                     entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)

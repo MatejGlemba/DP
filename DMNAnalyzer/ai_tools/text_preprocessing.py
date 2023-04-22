@@ -17,7 +17,7 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 def sent_to_words(sentences):
     for sentence in sentences:
         # deacc=True removes punctuations
-        yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))
+        yield(gensim.utils.simple_preprocess(str(sentence), deacc=True, min_len=3, max_len=15))
 
 def remove_stopwords(texts):
     return [[word for word in simple_preprocess(str(doc)) 

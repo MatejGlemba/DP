@@ -905,10 +905,17 @@ public class MatrixService {
 									textMessage.setQrName(qrCodeBean.getName());
 
 
-									if (!firstSync && ChatIconPositionEnum.RIGHT.equals(textMessage.getPosition())) {
+									// pokial to nie je prvy sync (nacitanie roomky) tak checkni hate v sprave
+									// a zobraz alarm druhej osobe. Posli o tomto notifikaciu do kafky do analyzera
+									UserBean userBean = userService.loadByMatrixUsername(senderInfo.getMatrixUsername());
+
+									if (!firstSync && userBean != null && userBean.isDmnAI()
+											&& ChatIconPositionEnum.RIGHT.equals(textMessage.getPosition())) {
 										if (checkHate(decryptedMsg)) {
 											try {
-												session.sendMessage(WebSocketUtil.createWebSocketTextMessage(new MessageAIResponse("There was hate message detected. Consider adding user to blaclist")));
+												session.sendMessage(WebSocketUtil.createWebSocketTextMessage(
+														new MessageAIResponse("There was hate message detected. "
+																+ "Consider adding user to blaclist")));
 											} catch (IOException e) {
 												LOG.debug("Problem with sending hate-speech alarm to user");
 											}
@@ -931,8 +938,6 @@ public class MatrixService {
 										session.sendMessage(WebSocketUtil.createWebSocketTextMessage(textMessage));
 										LOG.debug("msg sent to client: " + textMessage.getMessage());
 
-										
-										
 										// inform matrix server that msg was read by user
 										if (!msg.getSender().getLocalPart().equals(matrixUsername)) {
 											matrixRoom.sendReadReceipt(event.getId());
@@ -949,7 +954,7 @@ public class MatrixService {
 						}
 					} else {
 						// daco je zle 3
-						LOG.debug("no joined and/or matrix room");
+ 						LOG.debug("no joined and/or matrix room");
 					}
 
 					syncToken = data.nextBatchToken();

@@ -112,6 +112,7 @@ public class UserHandler extends AbstractHandler implements SessionPermissionVal
 		sessionBean.getUser().setChatIcon(userBeanRequest.getChatIcon());
 		sessionBean.getUser().setPushNotification(userBeanRequest.isPushNotification());
 		sessionBean.getUser().setEmailNotification(userBeanRequest.isEmailNotification());
+		sessionBean.getUser().setDmnAI(userBeanRequest.isDmnAI());
 		
 		userService.save(sessionBean.getUser());
 		
