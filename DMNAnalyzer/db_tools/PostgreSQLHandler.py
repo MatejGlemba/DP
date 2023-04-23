@@ -22,7 +22,6 @@ class PostgresDBHandler:
                 weight REAL
             );
         """
-
         create_table_room_flags_query = """
             CREATE TABLE IF NOT EXISTS entity_model_room_flags (
                 id SERIAL PRIMARY KEY,
@@ -109,20 +108,6 @@ class EntityRoomDBHandler:
         self.__conn.commit()
         cursor.close()
         
-    # def updateViolence(self, userID: str):
-    #     cursor = self.__conn.cursor()
-
-    #     # Perform an upsert (insert or update)
-    #     cursor.execute("""
-    #         INSERT INTO entity_model_room_flags (room_id, violence) 
-    #         VALUES (%s, %s) 
-    #         ON CONFLICT (room_id) DO UPDATE 
-    #         SET violence = entity_model_room_flags.violence + 1
-    #     """, (userID,1))
-
-    #     self.__conn.commit()
-    #     cursor.close()
-
     def updateViolence(self, roomID: str, flags: Dict):
         cursor = self.__conn.cursor()
         

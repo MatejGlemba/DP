@@ -26,12 +26,6 @@ def remove():
     collection = db['topic-model-user']
     collection.drop()
 
-    db = client['analyzerDB-outputs']
-    collection = db['entity-model-room']
-    collection.drop()
-    collection = db['entity-model-user']
-    collection.drop()
-
 def db_client():
     client = MongoClient("mongodb://root:rootpassword@localhost:27017/")
     db = client[analyzerDBInputs]

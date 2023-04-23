@@ -38,17 +38,6 @@ def check_categories(categories):
     return False
 
 def check_content(text):
-    # try:
-    #     result = openai.Moderation.create(input=text, model='text-moderation-latest', api_key=API_KEY)
-    # except Exception as e:
-    #     print("Error :", e)
-    #     return False
-    # print(result)
-    # flags = result['results'][0]
-    # if flags['flagged']:
-    #     return check_categories(flags['categories'])
-    # return False
-
     url = 'https://api.openai.com/v1/moderations'
     headers = {
         'Content-Type': 'application/json',
@@ -64,7 +53,7 @@ def check_content(text):
         # Parse the API response
         result = response.json()
         # Extract the predicted label ('safe', 'sensitive', or 'unsafe')
-        print(result)
+        #print(result)
         flags = result['results'][0]
         if flags['flagged']:
             return flags['categories']

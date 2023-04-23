@@ -26,6 +26,7 @@ def process1():
             handler.produce(RoomData(row_dict['qrcodeID'], row_dict['photoPath'], row_dict['description'], row_dict['roomName']))
         handler.flush()
     
+    sleep(5)
     #UC1_2
     messageTopicHandler = KafkaHandler.MessageTopicHandler('localhost:9094')
     with open('demo_data/DemoRoomUC1_2.csv', mode="r") as f:
@@ -44,6 +45,7 @@ def process1():
             messageTopicHandler.produce(MessageData(row_dict['roomID'], row_dict['qrcodeID'], row_dict['userID'], row_dict['data']))
         messageTopicHandler.flush()
     
+    sleep(5)
     #UC1_3
     handler = KafkaHandler.RoomAndUserDataTopicHandler('localhost:9094')
     with open('demo_data/DemoRoomUC1_3.csv', mode="r") as f:

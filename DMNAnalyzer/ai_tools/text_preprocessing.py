@@ -1,6 +1,5 @@
-from typing import List
+from typing import List, Tuple
 import re
-import gensim
 from gensim.utils import simple_preprocess
 import nltk
 nltk.download('stopwords')
@@ -8,25 +7,18 @@ nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
-import pandas as pd
 import en_core_web_sm
 
 stop_words = stopwords.words('english')
-stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
+stop_words.extend(['from', 'subject', 're', 'edu', 'use', 'yes', 'no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'])
 
-def sent_to_words(sentences):
+def covert_to_tokens(sentences, punctuations=True, min_len=3, max_len=15):
     for sentence in sentences:
         # deacc=True removes punctuations
-        yield(gensim.utils.simple_preprocess(str(sentence), deacc=True, min_len=3, max_len=15))
+        yield(simple_preprocess(str(sentence), deacc=punctuations, min_len=min_len, max_len=max_len))
 
 def remove_stopwords(texts):
-    return [[word for word in simple_preprocess(str(doc)) 
-             if word not in stop_words] for doc in texts]
-
-def clean(df: pd.DataFrame):
-    df['text'].map(lambda x: re.sub('[,\.!?]', '', x))
-    df['text'].map(lambda x: x.lower())
-    return df
+    return [[word for word in doc if word not in stop_words] for doc in texts]
 
 def nltk_pos_tagger(nltk_tag):
     if nltk_tag.startswith('J'):
@@ -44,10 +36,7 @@ def ner(data):
     nlp = en_core_web_sm.load()
     nlp.get_pipe('ner').labels
     doc = nlp(data)
-    return [(X.text, X.label_) for X in doc.ents]
-
-def get_ner_labels(df: pd.DataFrame):
-    return ner(','.join(list(df['text'].values)))
+    return [(simple_preprocess(X.text), X.label_) for X in doc.ents]
 
 def lemmatize(words, wl:WordNetLemmatizer):
     nltk_tagged = nltk.pos_tag(words)  
@@ -62,17 +51,32 @@ def lemmatize(words, wl:WordNetLemmatizer):
             lemmatized_sentence.append(wl.lemmatize(word, tag))
     return lemmatized_sentence
 
-def preprocess(data_words):
-    data_words = remove_stopwords(data_words)
+def preprocess(sentencesInTokens):
+    sentencesInTokens = remove_stopwords(sentencesInTokens)
     wl = WordNetLemmatizer()
-    data_words = [lemmatize(words, wl) for words in data_words]
-    return data_words
+    sentencesInTokens = [lemmatize(words, wl) for words in sentencesInTokens]
+    return sentencesInTokens
 
-def process(m: List[str]):
-    df = pd.DataFrame(m, columns =['text'])
-    df = clean(df)
-    ner_labels = get_ner_labels(df)
-    data = df['text'].values.tolist()
-    data_words = list(sent_to_words(data))
-    data_words = preprocess(data_words)
-    return data_words, ner_labels
+def remove_names(sentencesInTokens : List[List[str]], ner_labels: List[Tuple[List[str], str]]):
+    personNerLabels = []
+    for tokens, label in ner_labels:
+        if label == 'PERSON':
+            personNerLabels.extend(tokens)
+
+    return [[token for token in sentenceInTokens if token not in personNerLabels] for sentenceInTokens in sentencesInTokens]
+
+def process(sentences: List[str], addNerLabels: True):
+    sentencesWithoutSpecialChars = [re.sub('[,\.!?]', '', sentence) for sentence in sentences]
+    if addNerLabels:
+        one_document = ' '.join(sentencesWithoutSpecialChars)
+        ner_labels = ner(one_document)
+
+    sentencesInTokens = list(covert_to_tokens(sentencesWithoutSpecialChars))
+    if addNerLabels:
+        sentencesInTokens = remove_names(sentencesInTokens, ner_labels)
+
+    sentencesInTokens = preprocess(sentencesInTokens)
+    if addNerLabels:
+        return sentencesInTokens, ner_labels
+    else:
+        return sentencesInTokens

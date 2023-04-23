@@ -6,7 +6,9 @@ MODEL_WEIGHTS = 'image_models/yolov3.weights'  # Path to YOLO model weights
 MODEL_CONFIG = 'image_models/yolov3.cfg'  # Path to YOLO model configuration
 CLASS_NAMES = 'image_models/yolov3.names'  # Path to YOLO model class names
 
-def processImage(imagePath: str):
+def processImage(imagePath: str, conf_threshold: float = 0.5):
+    if not imagePath or 'null' in imagePath:
+        return None
     # Load the network architecture and weights
     net = cv2.dnn.readNetFromDarknet(MODEL_CONFIG, MODEL_WEIGHTS)
 
@@ -25,7 +27,7 @@ def processImage(imagePath: str):
     outs = net.forward(net.getUnconnectedOutLayersNames())
 
     # Parse output and extract detected objects
-    conf_threshold = 0.5  # Confidence threshold for object detection
+    #conf_threshold = 0.5  # Confidence threshold for object detection
     objects = []
     for out in outs:
         for detection in out:

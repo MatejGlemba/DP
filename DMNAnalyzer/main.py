@@ -7,7 +7,7 @@ from kafka_tools.deserializers import MessageData, UserData, RoomData
 from utils.crypto import Crypto
 from utils.messagesCounter import Counter
 from ai_tools import violence_checker, text_preprocessing, topic_modeling, image_processing
-from db_tools.MongoHandler import DBHandler, MessagesDBHandler, BlacklistDBHandler
+from db_tools.MongoHandler import DBHandler, MessagesDBHandler, BlacklistDBHandler, RoomDBHandler
 from db_tools.PostgreSQLHandler import PostgresDBHandler, EntityRoomDBHandler, EntityUserDBHandler
 from configparser import ConfigParser
 
@@ -21,7 +21,11 @@ def MessageAnalyzer():
     violenceCheckerOn = config.getboolean('analyzer', 'violence_checker_on')
     messagesTreshold = config.getint('analyzer', 'messages_treshold')
     violenceCheckerTreshold = config.getint('analyzer', 'violence_checker_treshold')
-    numOfTopics = config.getint('analyzer', 'num_of_topics')
+    numOfTopics = config.getint('model', 'num_of_topics')
+    numOfWordsPerTopic = config.getint('model', 'num_of_words_per_topic')
+    numOfPasses = config.getint('model', 'num_of_model_training_passes')
+    numOfIterations = config.getint('model', 'num_of_model_training_iterations')
+    minTopicProbability = config.getfloat('model', 'min_word_topic_probability')
     postgresDB = config.get('postgresDB', 'db_name')
     postgresUser = config.get('postgresDB', 'user')
     postgresPass = config.get('postgresDB', 'password')
@@ -35,6 +39,7 @@ def MessageAnalyzer():
     dbHandler = DBHandler(mongoUri)
     postgresDBHandler = PostgresDBHandler(postgresDB, postgresUser, postgresPass, postgresHost, postgresPort)
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
+    roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
     entityRoomDBHandler: EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler() 
     counter : Counter = Counter()
 
@@ -47,8 +52,9 @@ def MessageAnalyzer():
     # main app
     while True:
         msgData : MessageData = messageTopicHandler.consume()
-        print("Message analyzer - waiting for data")
-        messageTopicHandler.commit()
+      #  print("Message analyzer - waiting for data")
+     #   messageTopicHandler.commit()
+        time.sleep(1)
         if msgData:
             print("input: ", msgData.__dict__)
             counter.inc_counter(msgData.roomID, msgData.qrcodeID)
@@ -100,6 +106,7 @@ def MessageAnalyzer():
 
                 messagesInRoom = messagesDBHandler.readMessagesDataForRoom(msgData.roomID, msgData.qrcodeID)
                 messages: List[str] = messagesInRoom['data']
+                roomData : Dict = roomDBHandler.readRoomData(msgData.qrcodeID)
                 
                 # decrypt from MongoDB
                 decryptedMessages : List[str] = []
@@ -108,15 +115,27 @@ def MessageAnalyzer():
                     decryptedM = Crypto.decryptFun(m)
                     decryptedMessages.append(decryptedM)
                 
-                messages, ner_labels = text_preprocessing.process(decryptedMessages)
+                messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
                 
+                # room name + description + image objects
+                topWords = []
+                if roomData:
+                    if roomData['roomName']:
+                        topWords.append(roomData['roomName'])
+                    if roomData['description']:
+                        topWords.append(roomData['description'])
+                    if roomData['imageObjects']:
+                        topWords.append(roomData['imageObjects'])
+                    topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False)[0]
+
+                messages.append(topWords)
                 # model topics for num of topics treshold
-                model_topics = topic_modeling.runModel(messages, numOfTopics)
-                model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
+                model_topics = topic_modeling.runModel(documents=messages, num_topics=numOfTopics, num_words=numOfWordsPerTopic, passes=numOfPasses, iterations=numOfIterations, minimum_probability=minTopicProbability)
+                model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics, ner_labels=ner_labels, topWords=topWords)
            
                 # one overall topic for room 
-                model_topics_overall = topic_modeling.runModel(messages, 1)
-                model_topics_overall : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics_overall, ner_labels)
+                model_topics_overall = topic_modeling.runModel(documents=messages, num_topics=1, num_words=10, passes=numOfPasses, iterations=numOfIterations, minimum_probability=0.1)
+                model_topics_overall : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics_overall, ner_labels=ner_labels, topWords=topWords)
 
                 entityRoomDBHandler.updateTopics(msgData.roomID, msgData.qrcodeID, model_topics, model_topics_overall)  
                 
@@ -124,7 +143,12 @@ def UserRoomAnalyzer():
     # configs
     topicDescTreshold = config.getint('analyzer', 'topic_description_treshold')
     topicRoomNameTreshold = config.getint('analyzer', 'topic_room_name_treshold')
-    numOfTopics = config.getint('analyzer', 'num_of_topics')
+    numOfTopics = config.getint('model', 'num_of_topics')
+    numOfWordsPerTopic = config.getint('model', 'num_of_words_per_topic')
+    numOfPasses = config.getint('model', 'num_of_model_training_passes')
+    numOfIterations = config.getint('model', 'num_of_model_training_iterations')
+    minTopicProbability = config.getfloat('model', 'min_word_topic_probability')
+    imageConfThreshold = config.getfloat('model', 'image_confidence_threshold')
     postgresDB = config.get('postgresDB', 'db_name')
     postgresUser = config.get('postgresDB', 'user')
     postgresPass = config.get('postgresDB', 'password')
@@ -139,14 +163,15 @@ def UserRoomAnalyzer():
     postgresDBHandler = PostgresDBHandler(postgresDB, postgresUser, postgresPass, postgresHost, postgresPort)
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
+    roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
     entityUserDBHandler : EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
     entityRoomDBHandler : EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler()
 
     # main App
     while True:
         data = roomDataHandler.consume()
-        print("Blacklist and Room analyzer - waiting for data")
-
+      #  print("Blacklist and Room analyzer - waiting for data")
+        time.sleep(1)
         if data:
             if isinstance(data, RoomData):
                 # update data in mongoDB for topic modeling for all rooms matched by qrcodeID
@@ -164,6 +189,7 @@ def UserRoomAnalyzer():
                         for _ in range(topicDescTreshold):
                             temp += data.description
 
+                    roomDBHandler.updateRoomDescriptionData(data.qrcodeID, temp)
                     # encrypt data into MongoDB
                     dataEncrypted = Crypto.encryptFun(temp)
                     messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, dataEncrypted)
@@ -173,22 +199,28 @@ def UserRoomAnalyzer():
                     for _ in range(topicRoomNameTreshold):
                         temp += data.roomName
 
+                    roomDBHandler.updateRoomNameData(data.qrcodeID, temp)
                     # encrypt data into MongoDB
                     dataEncrypted = Crypto.encryptFun(temp)
                     messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, dataEncrypted)
 
                 if data.photoPath:
-                    detectedObjects = image_processing.processImage(data.photoPath)
-                    temp = ""
-                    for _ in range(topicDescTreshold):
-                        for detectedObject in detectedObjects:
-                            temp += detectedObject
-                    # encrypt data into MongoDB
-                    dataEncrypted = Crypto.encryptFun(temp)
-                    messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, dataEncrypted)
+                    detectedObjects = image_processing.processImage(imagePath=data.photoPath, conf_threshold=imageConfThreshold)
+                    if detectedObjects:
+                        temp = ""
+                        for _ in range(topicDescTreshold):
+                            for detectedObject in detectedObjects:
+                                temp += detectedObject
+
+                        roomDBHandler.updateRoomImageObjectsData(data.qrcodeID, temp)
+                        # encrypt data into MongoDB
+                        dataEncrypted = Crypto.encryptFun(temp)
+                        messagesDBHandler.updateMessagesDataForAllRooms(data.qrcodeID, dataEncrypted)
                 
                 # read all rooms for qrcodeID
                 rooms : List[Dict] = messagesDBHandler.readMessagesDataForAllRooms(data.qrcodeID)
+                roomData : Dict = roomDBHandler.readRoomData(data.qrcodeID)
+
                 for room in rooms:
                     roomID = room['roomID']
                     messages: List[str] = room['data']
@@ -200,18 +232,29 @@ def UserRoomAnalyzer():
                         decryptedM = Crypto.decryptFun(m)
                         decryptedMessages.append(decryptedM)
                     
-                    messages, ner_labels = text_preprocessing.process(decryptedMessages)
+                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
 
+                    # room name + description + image objects
+                    topWords = []
+                    if roomData:
+                        if roomData['roomName']:
+                            topWords.append(roomData['roomName'])
+                        if roomData['description']:
+                            topWords.append(roomData['description'])
+                        if roomData['imageObjects']:
+                            topWords.append(roomData['imageObjects'])
+                        topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False)[0]
+
+                    messages.append(topWords)
                     # model topics for num of topics treshold
-                    model_topics = topic_modeling.runModel(messages, numOfTopics)
-                    model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
+                    model_topics = topic_modeling.runModel(documents=messages, num_topics=numOfTopics, num_words=numOfWordsPerTopic, passes=numOfPasses, iterations=numOfIterations, minimum_probability=minTopicProbability)
+                    model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics, ner_labels=ner_labels, topWords=topWords)
 
                     # one overall topic for room
-                    model_topics_overall = topic_modeling.runModel(messages, 1)
-                    model_topics_overall : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics_overall, ner_labels)
+                    model_topics_overall = topic_modeling.runModel(documents=messages, num_topics=1, num_words=10, passes=numOfPasses, iterations=numOfIterations, minimum_probability=0.1)
+                    model_topics_overall : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics_overall, ner_labels=ner_labels, topWords=topWords)
                 
                     entityRoomDBHandler.updateTopics(roomID, data.qrcodeID, model_topics, model_topics_overall)
-
             elif isinstance(data, UserData):
                 if data.notes == "HATE":
                     entityUserDBHandler.updateHateSpeech(data.userID)
@@ -232,9 +275,9 @@ def UserRoomAnalyzer():
                         decryptedM = Crypto.decryptFun(note)
                         decryptedMessages.append(decryptedM)
 
-                    messages, ner_labels = text_preprocessing.process(decryptedMessages)
-                    model_topics = topic_modeling.runModel(messages, 1)
-                    model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics, ner_labels)
+                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
+                    model_topics = topic_modeling.runModel(documents=messages, num_topics=1, num_words=10, passes=numOfPasses, iterations=numOfIterations, minimum_probability=0.1)
+                    model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics, ner_labels=ner_labels, topWords=None)
                     entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
             else:
                 pass

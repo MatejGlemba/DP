@@ -39,7 +39,7 @@ def process1():
             for i in range(len(row)):
                 row_dict[header_row[i]] = row[i]
             print(row_dict)
-            sleep(2)
+            #sleep(2)
             UserDataTopicHandler.produce(UserData(row_dict['userID'], row_dict['notes']))
         UserDataTopicHandler.flush()
 
