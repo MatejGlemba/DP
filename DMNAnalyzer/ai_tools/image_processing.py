@@ -5,6 +5,7 @@ import numpy as np
 MODEL_WEIGHTS = 'image_models/yolov3.weights'  # Path to YOLO model weights
 MODEL_CONFIG = 'image_models/yolov3.cfg'  # Path to YOLO model configuration
 CLASS_NAMES = 'image_models/yolov3.names'  # Path to YOLO model class names
+BASE_PATH = '/home/matej/Documents/local_server/src/tomcat/app/ROOT/resources/dropmenote/files/images/' # Base path for DMN analyzer
 
 def processImage(imagePath: str, conf_threshold: float = 0.5):
     if not imagePath or 'null' in imagePath:
@@ -16,6 +17,7 @@ def processImage(imagePath: str, conf_threshold: float = 0.5):
     with open(CLASS_NAMES, 'r') as f:
         classes = [line.strip() for line in f.readlines()]
 
+    imagePath = BASE_PATH + imagePath
     # Load image
     image = cv2.imread(imagePath)
 

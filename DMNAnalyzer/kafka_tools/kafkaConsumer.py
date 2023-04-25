@@ -5,22 +5,22 @@ from kafka_tools import deserializers
 
 
 class KafkaConsumer:
-    def __init__(self, consumer: Consumer, topic, poll_timeout: float = 1.0) -> None:
-        self.__consumer = consumer
-        self.__poll_timeout: float = poll_timeout
-        self.__setTopics(topic)
+    def __init__(self, consumer: Consumer, topic) -> None:
+        self.consumer = consumer
+        self.setTopics(topic)
 
-    def __setTopics(self, topic):
+    def setTopics(self, topic):
         if isinstance(topic, str):
             #print("subcribe topic")
-            self.__consumer.subscribe([topic])
+            self.consumer.subscribe([topic])
         else:
             #print("subcribe more topics")
-            self.__consumer.subscribe(topic)
+            self.consumer.subscribe(topic)
 
     def consume(self, dataClass=deserializers.KafkaDeserializerObject) -> Message:
-        msg = self.__consumer.poll(timeout=self.__poll_timeout)
+        msg = self.consumer.poll(1.0)
         if msg:
+            print(msg)
             if msg.error():
                 print("Error while consuming message :", msg.error())
             else:
@@ -29,8 +29,9 @@ class KafkaConsumer:
                 return deserializers.deserialize(jsonValue=msg, dataClass=dataClass)
         
     def consumeMore(self) -> Message:
-        msg = self.__consumer.poll(timeout=self.__poll_timeout)
+        msg = self.consumer.poll(1.0)
         if msg:
+            print(msg)
             if msg.error():
                 print("Error while consuming message :", msg.error())
             else:
@@ -46,6 +47,3 @@ class KafkaConsumer:
                 else:
                     # Message Data
                     return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.MessageData)
-    
-    def commit(self):
-        self.__consumer.commit(asynchronous=True)

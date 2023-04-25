@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple
 import psycopg2
 
 # Define a global lock for coordination
-table_creation_lock = multiprocessing.Lock()
+##table_creation_lock = multiprocessing.Lock()
 
 class PostgresDBHandler:
     def __init__(self, postgresDB : str, postgresUser : str, postgresPass : str, postgresHost : str, postgresPort : str) -> None:
@@ -50,17 +50,16 @@ class PostgresDBHandler:
                 hate_speech INTEGER
             );
         """
-        with table_creation_lock:
-            try:
-                cursor.execute(create_table_room_query)
-                cursor.execute(create_table_room_flags_query)
-                cursor.execute(create_table_user_topics_query)
-                cursor.execute(create_table_user_flags_query)
-                self.__conn.commit()        
-            except Exception as e:
-                print(f"Error creating table: {e}")
-            finally:
-                cursor.close() 
+        try:
+            cursor.execute(create_table_room_query)
+            cursor.execute(create_table_room_flags_query)
+            cursor.execute(create_table_user_topics_query)
+            cursor.execute(create_table_user_flags_query)
+            self.__conn.commit()        
+        except Exception as e:
+            print(f"Error creating table: {e}")
+        finally:
+            cursor.close()
 
     def getEntityRoomDBHandler(self):
         return EntityRoomDBHandler(conn=self.__conn)
