@@ -3,7 +3,6 @@ package io.dpm.dropmenote.ws.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import java.util.List;
 import java.util.Properties;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -25,7 +24,7 @@ public class KafkaService<K, V> {
     private String BOOTSTRAP_SERVERS;
     @Value("${kafka.acks}")
     private String ACKS;
-    private KafkaProducer<K, String> kafkaProducer;
+    private KafkaProducer<String, String> kafkaProducer;
 
     @PostConstruct
     public void init() {
@@ -36,15 +35,19 @@ public class KafkaService<K, V> {
         config.put("group.id", "foo");
         config.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         config.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        this.kafkaProducer = new KafkaProducer<K, String>(config);
+        this.kafkaProducer = new KafkaProducer<String, String>(config);
         LOG.debug("Kafka service is initialized.");
     }
 
     public void produce(final TOPIC topic, final INPUT_DATA value) {
-        final ProducerRecord<K, String> record = new ProducerRecord<>(topic.name(), null, serializeToJson(value));
+        final ProducerRecord<String, String> record = new ProducerRecord<>("MESSAGE", "key", serializeToJson(value));
         kafkaProducer.send(record, (metadata, e) -> {
-            if (e != null)
+            if (e != null) {
                 LOG.warn("Send failed for record {}", record, e);
+            }
+            if (metadata != null) {
+                LOG.info("Metadata {}, {}, {}", record, metadata.topic(), metadata.timestamp());
+            }
         });
     }
 
