@@ -1,15 +1,22 @@
+import os
 import cv2
 import numpy as np
 
 # Load pre-trained YOLOv3 model
-MODEL_WEIGHTS = 'image_models/yolov3.weights'  # Path to YOLO model weights
-MODEL_CONFIG = 'image_models/yolov3.cfg'  # Path to YOLO model configuration
-CLASS_NAMES = 'image_models/yolov3.names'  # Path to YOLO model class names
-BASE_PATH = '/home/matej/Documents/local_server/src/tomcat/app/ROOT/resources/dropmenote/files/images/' # Base path for DMN analyzer
+MODEL_WEIGHTS = '/app/image_models/yolov3.weights'  # Path to YOLO model weights
+MODEL_CONFIG = '/app/image_models/yolov3.cfg'  # Path to YOLO model configuration
+CLASS_NAMES = '/app/image_models/yolov3.names'  # Path to YOLO model class names
+BASE_PATH = '/app/images/' # Base path for DMN analyzer
 
 def processImage(imagePath: str, conf_threshold: float = 0.5):
     if not imagePath or 'null' in imagePath:
         return None
+    
+    imagePath = BASE_PATH + imagePath
+
+    if not os.path.isfile(imagePath):
+        return None
+    
     # Load the network architecture and weights
     net = cv2.dnn.readNetFromDarknet(MODEL_CONFIG, MODEL_WEIGHTS)
 
@@ -17,7 +24,6 @@ def processImage(imagePath: str, conf_threshold: float = 0.5):
     with open(CLASS_NAMES, 'r') as f:
         classes = [line.strip() for line in f.readlines()]
 
-    imagePath = BASE_PATH + imagePath
     # Load image
     image = cv2.imread(imagePath)
 
@@ -41,3 +47,5 @@ def processImage(imagePath: str, conf_threshold: float = 0.5):
 
     objects = list(set(objects))
     return objects
+
+#print(processImage(imagePath='dpn_img_qr_code_1682351691767.jpeg', conf_threshold=0.5))
