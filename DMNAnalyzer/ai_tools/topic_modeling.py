@@ -17,11 +17,13 @@ def updatePercentageOnWordByNerLabel(weight : float, word: str, ner_labels :  Li
     for tokens, label in ner_labels:
         if label in ['NORP', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'EVENT', 'WORK_OF_ART']:
             if word.lower() in tokens:
+                print("here NER")
                 return round(weight * (1 + (50 / 100)), 3) # add 50%
     return weight
 
 def updatePercentageOnWordByTopWords(weight : float, word: str, topWords : List[str]) -> float:
     if word.lower() in topWords:
+        print("here tops")
         return round(weight * (1 + (90 / 100)), 3) # add 90%
     return weight
     
@@ -34,14 +36,12 @@ def parse_topic_string_and_update_percentage(topic_str: str, ner_labels : List[T
         if match:
             weight = float(match.group(1))
             word = match.group(2)
+            if topWords:
+                weight = updatePercentageOnWordByTopWords(weight, word, topWords)
             if ner_labels:
-                updatedWeight = updatePercentageOnWordByNerLabel(weight, word, ner_labels)
-                topic_tuples.append((updatedWeight, word))
-            elif topWords:
-                updatedWeight = updatePercentageOnWordByTopWords(weight, word, topWords)
-                topic_tuples.append((updatedWeight, word))
-            else:
-                topic_tuples.append((weight, word))
+                weight = updatePercentageOnWordByNerLabel(weight, word, ner_labels)
+        
+            topic_tuples.append((weight, word))
     return topic_tuples
 
 def updatePercentage(model_topics : List[Tuple[int, List[Tuple[str, float]]]], ner_labels : List[Tuple[List[str], str]] = None, topWords : List[str] = None) -> List[List[Tuple[float, str]]]:

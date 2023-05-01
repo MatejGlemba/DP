@@ -1,3 +1,4 @@
+from configparser import ConfigParser
 import os
 import cv2
 import numpy as np
@@ -6,7 +7,11 @@ import numpy as np
 MODEL_WEIGHTS = '/app/image_models/yolov3.weights'  # Path to YOLO model weights
 MODEL_CONFIG = '/app/image_models/yolov3.cfg'  # Path to YOLO model configuration
 CLASS_NAMES = '/app/image_models/yolov3.names'  # Path to YOLO model class names
-BASE_PATH = '/app/images/' # Base path for DMN analyzer
+#BASE_PATH = '/app/images/' # Base path for DMN analyzer
+
+config = ConfigParser()
+config.read('config.ini')
+BASE_PATH = config.get('model', 'image_path')
 
 def processImage(imagePath: str, conf_threshold: float = 0.5):
     if not imagePath or 'null' in imagePath:

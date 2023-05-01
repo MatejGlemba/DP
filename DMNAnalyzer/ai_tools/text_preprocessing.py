@@ -21,16 +21,16 @@ def remove_stopwords(texts):
     return [[word for word in doc if word not in stop_words] for doc in texts]
 
 def nltk_pos_tagger(nltk_tag):
-    if nltk_tag.startswith('J'):
-        return wordnet.ADJ
-    elif nltk_tag.startswith('V'):
-        return wordnet.VERB
-    elif nltk_tag.startswith('N'):
+    #if nltk_tag.startswith('J'):
+    #    return wordnet.ADJ
+   ## if nltk_tag.startswith('V'):
+    #    return wordnet.VERB
+    if nltk_tag.startswith('N'):
         return wordnet.NOUN
-    elif nltk_tag.startswith('R'):
-        return wordnet.ADV
+    #elif nltk_tag.startswith('R'):
+    #    return wordnet.ADV
     else:          
-        return wordnet.NOUN
+        return None
 
 def ner(data):
     nlp = en_core_web_sm.load()
@@ -44,9 +44,9 @@ def lemmatize(words, wl:WordNetLemmatizer):
     lemmatized_sentence = []
 
     for word, tag in wordnet_tagged:
-        #print("WORD " + word + " TAG " + tag)
         if tag is None:
-            lemmatized_sentence.append(word)
+            pass
+            #lemmatized_sentence.append(word)
         else:        
             lemmatized_sentence.append(wl.lemmatize(word, tag))
     return lemmatized_sentence
