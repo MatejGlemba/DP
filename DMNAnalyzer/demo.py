@@ -110,11 +110,9 @@ def process_DMN():
         # for model_topic in model_topics:
         #     print("Model topic : {}".format(model_topic))
         
-        #print("----------------------------------------------------------------------------------------------------")   
-        output_filename = 'resources/topicResultDMN-Nouns_' + str(item) + '.txt'
-        #print("topwrods", topWords)
+       
         model_topics = topic_modeling.updatePercentage(model_topics, ner_labels, topWords)
-        #print("Updated Model Topics weights of ner_labels :")
+        output_filename = 'resources/topicResultDMN-Nouns_' + str(item) + '.txt'
         with open(output_filename, "w") as file:
             for model_topic_num, v in model_topics.items():
                 file.write("Model topic : {} - {} \n".format(model_topic_num, v))
