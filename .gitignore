@@ -28,6 +28,7 @@ hs_err_pid*
 *target/
 
 #analyzer
+.vscode
 env/
 __pycache__/
 image_models
@@ -35,7 +36,7 @@ EMNLP_dataset/
 resources/
 wordclouds/
 demos/
-demo_data/
+demo-data
 
 #server
 dropmenote-server-DB/dropmenote-ws/src/main/webapp/app/META-INF/
