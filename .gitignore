@@ -33,6 +33,9 @@ __pycache__/
 image_models
 EMNLP_dataset/
 resources/
+wordclouds/
+demos/
+demo_data/
 
 #server
 dropmenote-server-DB/dropmenote-ws/src/main/webapp/app/META-INF/
