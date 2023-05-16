@@ -1,95 +1,137 @@
-version: "3"
-
 services:
+  serverApp:
+    image: tomcat:9.0.48-jdk11-openjdk-slim
+    restart: "always"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./tomcat/app:/usr/local/tomcat/webapps/
+      - ./images:/usr/local/tomcat/webapps/ROOT/resources/dropmenote/files/images/
+    depends_on:
+      - serverDB
+    networks:
+      - ai-network
+      - app-network
+
+  serverDB:
+    image: docker.io/postgres:10.3-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=testDB
+      - POSTGRES_PASSWORD=test
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - ./serverDB/data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - app-network
+
   zookeeper:
     image: docker.io/bitnami/zookeeper:3.7
     user: root
-    ports:
-      - 2181:2181
-    volumes:
-      - ./src/zookeeper:/bitnami
+    #ports:
+    #  - 2181:2181
+    #volumes:
+    #  - ./src/zookeeper:/bitnami
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
-      - dh-kafka
+      - ai-network
 
-  kafka:
+  dmnkafka:
     image: docker.io/bitnami/kafka:3
-    hostname: dh-kafka
+  #  hostname: dh-kafka
     user: root
     ports:
       - 9094:9094
-    volumes:
-      - ./src/kafka:/bitnami/kafka
+   # volumes:
+   #   - ./src/kafka:/bitnami/kafka
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - AUTO_CREATE_TOPICS=true
       - KAFKA_LISTENERS=INTERNAL://0.0.0.0:9092,OUTSIDE://0.0.0.0:9094
-      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://localhost:9092,OUTSIDE://localhost:9094
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://dmnkafka:9092,OUTSIDE://localhost:9094
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT,DEV:PLAINTEXT
       - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
     depends_on:
       - zookeeper
     networks:
-      - dh-kafka
+      - ai-network
 
   mongodb:
-    image: mongo:latest
+    image: mongo:5.0
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
     ports:
       - 27017:27017
     volumes:
-      - ./src/mognodb:/data/db
+      - ./src/mongodb:/data/db
     networks:
       - ai-network
 
-  #influxdb:
-  #  container_name: influxdb
-  #  image: influxdb:2.5.1-alpine
-  #  ports:
-  #    - 8086:8086
-  #  restart: always
-  #  volumes:
-  #    - ./src/influxdb/data:/var/lib/influxdb
-  #    - ./src/influxdb/config.yml:/etc/influxdb2/config.yml
-  #  environment:
-  #    - DOCKER_INFLUXDB_INIT_MODE=setup
-  #    - DOCKER_INFLUXDB_INIT_USERNAME=user
-  #    - DOCKER_INFLUXDB_INIT_PASSWORD=useruseruser
-  #    - DOCKER_INFLUXDB_INIT_ORG=influxdata-org
-  #    - DOCKER_INFLUXDB_INIT_BUCKET=default
-  #    - DOCKER_INFLUXDB_INIT_RETENTION=1w
-  #    - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=token
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    user: "472:472"
+    volumes:
+      - ./src/grafana/config.ini:/etc/grafana/config.ini
+      - ./src/grafana/provisioning:/etc/grafana/provisioning
+      - ./src/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./src/grafana/plugins:/var/lib/grafana/plugins
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/roomsDashboard.json
+    depends_on:
+      - postgres
+      - analyzer
+    restart: always
   #  privileged: true
-  #  networks:
-  #    - ai-network
+    networks:
+      - ai-network
+      - db-network
 
-  #grafana:
-  #  image: grafana/grafana:latest
-  #  links:
-  #    - influxdb:influxdb
-  #  volumes:
-  #    - ./src/grafana/grafana-data:/var/lib/grafana
-  #    - ./src/grafana/provisioning:/etc/grafana/provisioning
-  #    - ./src/grafana/dashboards:/var/lib/grafana/dashboards
-  #    - ./src/grafana/config.ini:/etc/grafana/config.ini
-  #  environment:
-  #    - GF_AUTH_ANONYMOUS_ENABLED=true
-  #    - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/dashboard.json
-  #  ports:
-  #    - 3000:3000
-  #  depends_on:
-  #    - influxdb
-  #  restart: always
-  #  privileged: true
-  #  networks:
-  #    - ai-network
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: analyzerDB
+   # volumes:
+   #   - ./src/postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - db-network
+
+  analyzer:
+    image: dmn-analyzer
+    restart: always
+    volumes:
+      - ./src/analyzer:/app
+      - ./images:/app/images
+    ports:
+      - "5000:5000"  # Example port mapping for your application
+    depends_on:
+      - dmnkafka
+      - postgres
+      - mongodb
+    privileged: true
+    networks:
+      - ai-network
+      - db-network
 
 networks:
-  dh-kafka:
-    name: dh-kafka
   ai-network:
     name: ai-network
+  app-network:
+    name: app-network
+  db-network:
+    name: db-network

@@ -37,6 +37,7 @@ resources/
 wordclouds/
 demos/
 demo-data
+images
 
 #server
 dropmenote-server-DB/dropmenote-ws/src/main/webapp/app/META-INF/
@@ -45,7 +46,7 @@ dropmenote-server-DB/dropmenote-ws/src/main/webapp/node_modules/
 
 #docker
 docker/dropmenote/sources/synapse/data/
-docker/analyzer/src/zookeeper/
-docker/analyzer/src/kafka/
-docker/analyzer/src/mognodb/
-docker/analyzer/src/influxdb/data/
+docker/analyzer/src/mongodb
+docker/analyzer/src/postgres
+docker/analyzer/serverDB
+docker/analyzer/tomcat
