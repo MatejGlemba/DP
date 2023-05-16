@@ -8,7 +8,7 @@ class DBHandler:
         self.__dbInputs = self.__dbHandler['analyzerDB-inputs']
 
     def getBlackListDBHandler(self):
-        return BlacklistDBHandler(collection=self.__dbInputs['topic-model-user'])
+        return UserDBHandler(collection=self.__dbInputs['topic-model-user'])
     
     def getMessagesDBHandler(self):
         return MessagesDBHandler(collection=self.__dbInputs['topic-model-messages'])
@@ -16,7 +16,7 @@ class DBHandler:
     def getRoomDBHandler(self):
         return RoomDBHandler(collection=self.__dbInputs['topic-model-room'])
     
-class BlacklistDBHandler:
+class UserDBHandler:
     def __init__(self, collection: Collection) -> None:
         self.__collection = collection
 

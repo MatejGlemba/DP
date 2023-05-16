@@ -40,8 +40,8 @@ class RoomAndUserDataTopicHandler:
 
 class TopicHandler:
     def __init__(self, uri : str) -> None:
-        #self.topicHandler: KafkaConsumer = KafkaConsumer(consumer=Consumer({'bootstrap.servers': uri, 'group.id': 'foo', 'auto.offset.reset': 'earliest'}), topic=["ROOM_DATA", "USER_DATA", "MESSAGE_DATA"])
-        self.topicHandler: KafkaConsumer = KafkaConsumer(consumer=Consumer({'bootstrap.servers': uri, 'group.id': 'foo', 'auto.offset.reset': 'earliest'}), topic=["MESSAGE"])
+        self.topicHandler: KafkaConsumer = KafkaConsumer(consumer=Consumer({'bootstrap.servers': uri, 'group.id': 'foo', 'auto.offset.reset': 'earliest'}), topic=["ROOM_DATA", "USER_DATA", "MESSAGE_DATA"])
+        #self.topicHandler: KafkaConsumer = KafkaConsumer(consumer=Consumer({'bootstrap.servers': uri, 'group.id': 'foo', 'auto.offset.reset': 'earliest'}), topic=["MESSAGE"])
         
     def consume(self):
         return self.topicHandler.consumeMore()

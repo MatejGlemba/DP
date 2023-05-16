@@ -20,7 +20,7 @@ class KafkaConsumer:
     def consume(self, dataClass=deserializers.KafkaDeserializerObject) -> Message:
         msg = self.consumer.poll(1.0)
         if msg:
-            print(msg)
+           # print(msg)
             if msg.error():
                 print("Error while consuming message :", msg.error())
             else:
@@ -31,7 +31,7 @@ class KafkaConsumer:
     def consumeMore(self) -> Message:
         msg = self.consumer.poll(1.0)
         if msg:
-            print(msg)
+          #  print(msg)
             if msg.error():
                 print("Error while consuming message :", msg.error())
             else:

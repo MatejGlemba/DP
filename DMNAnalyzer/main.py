@@ -7,7 +7,7 @@ from kafka_tools.deserializers import MessageData, UserData, RoomData
 from utils.crypto import Crypto
 from utils.messagesCounter import Counter
 from ai_tools import violence_checker, text_preprocessing, topic_modeling, image_processing
-from db_tools.MongoHandler import DBHandler, MessagesDBHandler, BlacklistDBHandler, RoomDBHandler
+from db_tools.MongoHandler import DBHandler, MessagesDBHandler, UserDBHandler, RoomDBHandler
 from db_tools.PostgreSQLHandler import PostgresDBHandler, EntityRoomDBHandler, EntityUserDBHandler
 from configparser import ConfigParser
 
@@ -17,6 +17,7 @@ roomDataHandler : KafkaHandler.RoomAndUserDataTopicHandler = None
 topicHandler : KafkaHandler.TopicHandler = None
 dbHandler : DBHandler = None
 postgresDBHandler : PostgresDBHandler = None
+parallelism = False
 
 def readConfig():
     global config
@@ -25,6 +26,7 @@ def readConfig():
     global dbHandler
     global postgresDBHandler
     global topicHandler
+    global parallelism
 
     config = ConfigParser()
     config.read('config.ini')
@@ -37,14 +39,18 @@ def readConfig():
     kafkaUri = config.get('kafka', 'kafka_uri')
     mongoUri = config.get('mongoDB', 'mongo_uri')
 
+    parallelism = config.getboolean('analyzer', 'parallelism')
+
     # initializers
-   # messageTopicHandler = KafkaHandler.MessageTopicHandler(kafkaUri)
-    roomDataHandler = KafkaHandler.RoomAndUserDataTopicHandler(kafkaUri)
-    topicHandler = KafkaHandler.TopicHandler(kafkaUri)
+    if parallelism:
+        messageTopicHandler = KafkaHandler.MessageTopicHandler(kafkaUri)
+        roomDataHandler = KafkaHandler.RoomAndUserDataTopicHandler(kafkaUri)
+    else:
+        topicHandler = KafkaHandler.TopicHandler(kafkaUri)
     dbHandler = DBHandler(mongoUri)
     postgresDBHandler = PostgresDBHandler(postgresDB, postgresUser, postgresPass, postgresHost, postgresPort)
 
-def MessageAnalyzer():
+def messageAnalyzer():
     # configs
     violenceCheckerOn = config.getboolean('analyzer', 'violence_checker_on')
     messagesTreshold = config.getint('analyzer', 'messages_treshold')
@@ -70,7 +76,7 @@ def MessageAnalyzer():
     # main app
     while True:
         msgData : MessageData = messageTopicHandler.consume()
-      #  print("Message analyzer - waiting for data")
+        print("Message analyzer - waiting for data")
      #   messageTopicHandler.commit()
         time.sleep(1)
         if msgData:
@@ -119,7 +125,7 @@ def MessageAnalyzer():
             
             # build topics
             if counter.get_counter(msgData.roomID, msgData.qrcodeID) == messagesTreshold:
-                print("update entity room model for: ", msgData.roomID, msgData.qrcodeID)
+                print("update entity room model for: ", msgData.roomID, msgData.qrcodeID, flush=True)
                 counter.set_counter(msgData.roomID, msgData.qrcodeID)
 
                 messagesInRoom = messagesDBHandler.readMessagesDataForRoom(msgData.roomID, msgData.qrcodeID)
@@ -133,7 +139,7 @@ def MessageAnalyzer():
                     decryptedM = Crypto.decryptFun(m)
                     decryptedMessages.append(decryptedM)
                 
-                messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
+                messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True, forBlacklist=False)
                 
                 # room name + description + image objects
                 topWords = []
@@ -144,20 +150,20 @@ def MessageAnalyzer():
                         topWords.append(roomData['description'])
                     if roomData['imageObjects']:
                         topWords.append(roomData['imageObjects'])
-                    topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False)[0]
+                    topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False, forBlacklist=False)[0]
 
                 messages.append(topWords)
                 # model topics for num of topics treshold
                 model_topics = topic_modeling.runModel(documents=messages, num_topics=numOfTopics, num_words=numOfWordsPerTopic, passes=numOfPasses, iterations=numOfIterations, minimum_probability=minTopicProbability)
                 model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics, ner_labels=ner_labels, topWords=topWords)
-           
+        
                 # one overall topic for room 
                 model_topics_overall = topic_modeling.runModel(documents=messages, num_topics=1, num_words=10, passes=numOfPasses, iterations=numOfIterations, minimum_probability=0.1)
                 model_topics_overall : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics_overall, ner_labels=ner_labels, topWords=topWords)
 
                 entityRoomDBHandler.updateTopics(msgData.roomID, msgData.qrcodeID, model_topics, model_topics_overall)  
-                
-def UserRoomAnalyzer():
+  
+def userRoomAnalyzer():
     # configs
     topicDescTreshold = config.getint('analyzer', 'topic_description_treshold')
     topicRoomNameTreshold = config.getint('analyzer', 'topic_room_name_treshold')
@@ -172,18 +178,19 @@ def UserRoomAnalyzer():
     # initializers 
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
-    blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
+    blacklistDBHandler : UserDBHandler = dbHandler.getBlackListDBHandler()
     entityUserDBHandler : EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
     entityRoomDBHandler: EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler()
     
     # main App
     while True:
         data = roomDataHandler.consume()
-      #  print("Blacklist and Room analyzer - waiting for data")
+        print("Blacklist and Room analyzer - waiting for data")
         time.sleep(1)
         if data:
             if isinstance(data, RoomData):
                 # update data in mongoDB for topic modeling for all rooms matched by qrcodeID
+                print("input: ", data.__dict__, flush=True)
                 if data.description:
                     # check if description contains html tags
                     if "<p>" in data.description:
@@ -238,11 +245,11 @@ def UserRoomAnalyzer():
                     # decrypt from MongoDB
                     decryptedMessages : List[str] = []
                     for m in messages:
-                     #   print("message to be decrypted", m)
+                        #   print("message to be decrypted", m)
                         decryptedM = Crypto.decryptFun(m)
                         decryptedMessages.append(decryptedM)
                     
-                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
+                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True, forBlacklist=False)
 
                     # room name + description + image objects
                     topWords = []
@@ -253,7 +260,7 @@ def UserRoomAnalyzer():
                             topWords.append(roomData['description'])
                         if roomData['imageObjects']:
                             topWords.append(roomData['imageObjects'])
-                        topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False)[0]
+                        topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False, forBlacklist=False)[0]
 
                     messages.append(topWords)
                     # model topics for num of topics treshold
@@ -266,6 +273,7 @@ def UserRoomAnalyzer():
                 
                     entityRoomDBHandler.updateTopics(roomID, data.qrcodeID, model_topics, model_topics_overall)
             elif isinstance(data, UserData):
+                print("input: ", data.__dict__, flush=True)
                 if data.notes == "HATE":
                     entityUserDBHandler.updateHateSpeech(data.userID)
                 else:
@@ -285,7 +293,7 @@ def UserRoomAnalyzer():
                         decryptedM = Crypto.decryptFun(note)
                         decryptedMessages.append(decryptedM)
 
-                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
+                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True, forBlacklist=True)
                     model_topics = topic_modeling.runModel(documents=messages, num_topics=1, num_words=10, passes=numOfPasses, iterations=numOfIterations, minimum_probability=0.1)
                     model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics, ner_labels=ner_labels, topWords=None)
                     entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
@@ -293,18 +301,10 @@ def UserRoomAnalyzer():
                 pass
 
 def analyzer():
-
     # configs
     topicDescTreshold = config.getint('analyzer', 'topic_description_treshold')
     topicRoomNameTreshold = config.getint('analyzer', 'topic_room_name_treshold')
     imageConfThreshold = config.getfloat('model', 'image_confidence_threshold')
-
-
-    # initializers 
-    blacklistDBHandler : BlacklistDBHandler = dbHandler.getBlackListDBHandler()
-    entityUserDBHandler : EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
-
-    # configs
     violenceCheckerOn = config.getboolean('analyzer', 'violence_checker_on')
     messagesTreshold = config.getint('analyzer', 'messages_treshold')
     violenceCheckerTreshold = config.getint('analyzer', 'violence_checker_treshold')
@@ -315,9 +315,11 @@ def analyzer():
     minTopicProbability = config.getfloat('model', 'min_word_topic_probability')
 
     # initializers 
-    entityRoomDBHandler: EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler()
+    blacklistDBHandler : UserDBHandler = dbHandler.getBlackListDBHandler()
     messagesDBHandler : MessagesDBHandler = dbHandler.getMessagesDBHandler()
     roomDBHandler : RoomDBHandler = dbHandler.getRoomDBHandler()
+    entityUserDBHandler : EntityUserDBHandler = postgresDBHandler.getEntityUserDBHandler()
+    entityRoomDBHandler: EntityRoomDBHandler = postgresDBHandler.getEntityRoomDBHandler()
     counter : Counter = Counter()
 
     # violence checker fields
@@ -393,7 +395,7 @@ def analyzer():
                         decryptedM = Crypto.decryptFun(m)
                         decryptedMessages.append(decryptedM)
                     
-                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
+                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True, forBlacklist=False)
                     
                     # room name + description + image objects
                     topWords = []
@@ -404,7 +406,7 @@ def analyzer():
                             topWords.append(roomData['description'])
                         if roomData['imageObjects']:
                             topWords.append(roomData['imageObjects'])
-                        topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False)[0]
+                        topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False, forBlacklist=False)[0]
 
                     messages.append(topWords)
                     # model topics for num of topics treshold
@@ -478,7 +480,7 @@ def analyzer():
                         decryptedM = Crypto.decryptFun(m)
                         decryptedMessages.append(decryptedM)
                     
-                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
+                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True, forBlacklist=False)
 
                     # room name + description + image objects
                     topWords = []
@@ -489,7 +491,7 @@ def analyzer():
                             topWords.append(roomData['description'])
                         if roomData['imageObjects']:
                             topWords.append(roomData['imageObjects'])
-                        topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False)[0]
+                        topWords = text_preprocessing.process(sentences=topWords, addNerLabels=False, forBlacklist=False)[0]
 
                     messages.append(topWords)
                     # model topics for num of topics treshold
@@ -523,7 +525,7 @@ def analyzer():
                         decryptedM = Crypto.decryptFun(note)
                         decryptedMessages.append(decryptedM)
 
-                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True)
+                    messages, ner_labels = text_preprocessing.process(sentences=decryptedMessages, addNerLabels=True, forBlacklist=True)
                     model_topics = topic_modeling.runModel(documents=messages, num_topics=1, num_words=10, passes=numOfPasses, iterations=numOfIterations, minimum_probability=0.1)
                     model_topics : Dict[str, List[Tuple[float, str]]] = topic_modeling.updatePercentage(model_topics=model_topics, ner_labels=ner_labels, topWords=None)
                     entityUserDBHandler.updateTopics(userID=data.userID, topics=model_topics)
@@ -533,10 +535,13 @@ def analyzer():
 
 if __name__ == "__main__":
     readConfig()
-    analyzer()
-    # p1 = Process(target=UserRoomAnalyzer)
-    # p1.start()
-    # p2 = Process(target=MessageAnalyzer)
-    # p2.start()
-    # p1.join()
-    # p2.join()
+
+    if parallelism:
+        p1 = Process(target=userRoomAnalyzer)
+        p1.start()
+        p2 = Process(target=messageAnalyzer)
+        p2.start()
+        p1.join()
+        p2.join()
+    else:
+        analyzer()

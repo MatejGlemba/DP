@@ -91,9 +91,10 @@ class EntityRoomDBHandler:
             """, (qrcodeID, roomID))
             
         values = []
-        for _, topicList in overallTopics.items():
-            for weight, word in topicList:
-                values.append((qrcodeID, roomID, 0, word, weight))
+        if overallTopics:
+            for _, topicList in overallTopics.items():
+                for weight, word in topicList:
+                    values.append((qrcodeID, roomID, 0, word, weight))
 
         for topicNum, topicList in topics.items():
             for weight, word in topicList:

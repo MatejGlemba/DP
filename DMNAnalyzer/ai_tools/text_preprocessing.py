@@ -20,17 +20,23 @@ def covert_to_tokens(sentences, punctuations=True, min_len=3, max_len=15):
 def remove_stopwords(texts):
     return [[word for word in doc if word not in stop_words] for doc in texts]
 
-def nltk_pos_tagger(nltk_tag):
-    #if nltk_tag.startswith('J'):
-    #    return wordnet.ADJ
-   ## if nltk_tag.startswith('V'):
-    #    return wordnet.VERB
-    if nltk_tag.startswith('N'):
-        return wordnet.NOUN
-    #elif nltk_tag.startswith('R'):
-    #    return wordnet.ADV
-    else:          
-        return None
+def nltk_pos_tagger(nltk_tag, blacklist):
+    if blacklist:
+        if nltk_tag.startswith('J'):
+            return wordnet.ADJ
+        elif nltk_tag.startswith('V'):
+            return wordnet.VERB
+        elif nltk_tag.startswith('N'):
+            return wordnet.NOUN
+        elif nltk_tag.startswith('R'):
+            return wordnet.ADV
+        else:          
+            return None
+    else:
+        if nltk_tag.startswith('N'):
+            return wordnet.NOUN
+        else:
+            return None
 
 def ner(data):
     nlp = en_core_web_sm.load()
@@ -38,9 +44,9 @@ def ner(data):
     doc = nlp(data)
     return [(simple_preprocess(X.text), X.label_) for X in doc.ents]
 
-def lemmatize(words, wl:WordNetLemmatizer):
+def lemmatize(words, wl:WordNetLemmatizer, forBlacklist):
     nltk_tagged = nltk.pos_tag(words)  
-    wordnet_tagged = map(lambda x: (x[0], nltk_pos_tagger(x[1])), nltk_tagged)
+    wordnet_tagged = map(lambda x: (x[0], nltk_pos_tagger(x[1], forBlacklist)), nltk_tagged)
     lemmatized_sentence = []
 
     for word, tag in wordnet_tagged:
@@ -51,10 +57,10 @@ def lemmatize(words, wl:WordNetLemmatizer):
             lemmatized_sentence.append(wl.lemmatize(word, tag))
     return lemmatized_sentence
 
-def preprocess(sentencesInTokens):
+def preprocess(sentencesInTokens, forBlacklist):
     sentencesInTokens = remove_stopwords(sentencesInTokens)
     wl = WordNetLemmatizer()
-    sentencesInTokens = [lemmatize(words, wl) for words in sentencesInTokens]
+    sentencesInTokens = [lemmatize(words, wl, forBlacklist) for words in sentencesInTokens]
     return sentencesInTokens
 
 def remove_names(sentencesInTokens : List[List[str]], ner_labels: List[Tuple[List[str], str]]):
@@ -65,7 +71,7 @@ def remove_names(sentencesInTokens : List[List[str]], ner_labels: List[Tuple[Lis
 
     return [[token for token in sentenceInTokens if token not in personNerLabels] for sentenceInTokens in sentencesInTokens]
 
-def process(sentences: List[str], addNerLabels: True):
+def process(sentences: List[str], addNerLabels: True, forBlacklist: False):
     sentencesWithoutSpecialChars = [re.sub('[,\.!?]', '', sentence) for sentence in sentences]
     if addNerLabels:
         one_document = ' '.join(sentencesWithoutSpecialChars)
@@ -75,7 +81,7 @@ def process(sentences: List[str], addNerLabels: True):
     if addNerLabels:
         sentencesInTokens = remove_names(sentencesInTokens, ner_labels)
 
-    sentencesInTokens = preprocess(sentencesInTokens)
+    sentencesInTokens = preprocess(sentencesInTokens, forBlacklist)
     if addNerLabels:
         return sentencesInTokens, ner_labels
     else:
