@@ -22,8 +22,8 @@ services:
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
       - ./serverDB/data:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
+   # ports:
+   #   - 5432:5432
     networks:
       - app-network
 
@@ -43,8 +43,8 @@ services:
     image: docker.io/bitnami/kafka:3
   #  hostname: dh-kafka
     user: root
-    ports:
-      - 9094:9094
+   # ports:
+   #   - 9094:9094
    # volumes:
    #   - ./src/kafka:/bitnami/kafka
     environment:
@@ -65,10 +65,10 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
-    ports:
-      - 27017:27017
-    volumes:
-      - ./src/mongodb:/data/db
+   # ports:
+   #   - 27017:27017
+   # volumes:
+   #   - ./src/mongodb:/data/db
     networks:
       - ai-network
 
@@ -106,8 +106,8 @@ services:
       POSTGRES_DB: analyzerDB
    # volumes:
    #   - ./src/postgres/data:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"
+  #  ports:
+   #   - "5434:5432"
     networks:
       - db-network
 
@@ -117,13 +117,13 @@ services:
     volumes:
       - ./src/analyzer:/app
       - ./images:/app/images
-    ports:
-      - "5000:5000"  # Example port mapping for your application
+  #  ports:
+  #    - "5000:5000"  # Example port mapping for your application
     depends_on:
       - dmnkafka
       - postgres
       - mongodb
-    privileged: true
+   # privileged: true
     networks:
       - ai-network
       - db-network

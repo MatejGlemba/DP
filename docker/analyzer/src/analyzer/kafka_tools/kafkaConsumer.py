@@ -37,7 +37,7 @@ class KafkaConsumer:
             else:
                 msg = msg.value()
                 msgDict = eval(msg)
-               # print(msgDict)
+                print(msgDict)
                 if 'notes' in msgDict.keys():
                     # Blacklist data
                     return deserializers.deserialize(jsonValue=msg, dataClass=deserializers.UserData)

@@ -907,8 +907,8 @@ public class MatrixService {
 
 									// pokial to nie je prvy sync (nacitanie roomky) tak checkni hate v sprave
 									// a zobraz alarm druhej osobe. Posli o tomto notifikaciu do kafky do analyzera
-									UserBean userBean = userService.loadByMatrixUsername(senderInfo.getMatrixUsername());
-
+									//UserBean userBean = userService.loadByMatrixUsername(senderInfo.getMatrixUsername());
+									UserBean userBean = userService.loadByMatrixUsername(matrixUsername);
 									if (!firstSync && userBean != null && userBean.isDmnAI()
 											&& ChatIconPositionEnum.RIGHT.equals(textMessage.getPosition())) {
 										if (checkHate(decryptedMsg)) {

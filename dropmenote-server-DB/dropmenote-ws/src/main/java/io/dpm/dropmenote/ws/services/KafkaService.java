@@ -40,7 +40,7 @@ public class KafkaService<K, V> {
     }
 
     public void produce(final TOPIC topic, final INPUT_DATA value) {
-        final ProducerRecord<String, String> record = new ProducerRecord<>("MESSAGE", "key", serializeToJson(value));
+        final ProducerRecord<String, String> record = new ProducerRecord<>(topic.name(), "key", serializeToJson(value));
         kafkaProducer.send(record, (metadata, e) -> {
             if (e != null) {
                 LOG.warn("Send failed for record {}", record, e);
